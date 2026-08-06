@@ -1,0 +1,5 @@
+# Local Claude Code config — not part of the published site
+.claude/
+
+# Internal docs kept in this folder, never published
+BOSSLABS.md
