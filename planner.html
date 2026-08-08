@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2-Week Meal Planner</title>
+<meta name="description" content="Plan two weeks of low-carb, Filipino-friendly meals. Pick a dish for every slot, tick them off, print or save as PDF.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230891B2'/%3E%3Ccircle cx='16' cy='18' r='8.5' fill='none' stroke='%23ECFEFF' stroke-width='2'/%3E%3Cpath d='M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z' fill='%2334D399'/%3E%3Cpath d='M16 6.5v4.5' stroke='%2334D399' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230891B2'/%3E%3Ccircle cx='16' cy='18' r='8.5' fill='none' stroke='%23ECFEFF' stroke-width='2'/%3E%3Cpath d='M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z' fill='%2334D399'/%3E%3Cpath d='M16 6.5v4.5' stroke='%2334D399' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* =========================================================================
+   2-Week Meal Planner
+   Single file. No frameworks, no network calls, no storage. (spec §9)
+   Design system: Soft UI Evolution — calm cyan primary + health green accent.
+   ========================================================================= */
+
+:root{
+  --color-primary:#0E7490;
+  --color-on-primary:#FFFFFF;
+  --color-accent:#047857;
+  --color-on-accent:#FFFFFF;
+  /* Canvas sits well below the white cards so each day reads as its own
+     object rather than one continuous sheet. */
+  --color-background:#D8EDF4;
+  --color-surface:#FFFFFF;
+  --color-surface-2:#EEF7FA;
+  --color-foreground:#0B3341;
+  --color-muted-fg:#37606F;
+  --color-muted:#DCEBF1;
+  --color-border:#AFD4E1;
+  --color-border-strong:#5F8B9A;
+  --color-destructive:#B91C1C;
+  --color-ring:#0E7490;
+
+  --dot-breakfast:#B45309;
+  --dot-lunch:#0E7490;
+  --dot-dinner:#6D28D9;
+  --dot-snack:#047857;
+
+  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233D6675' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:24px; --space-6:32px; --space-7:48px;
+
+  --radius-sm:8px; --radius:14px; --radius-lg:20px;
+  --shadow-sm:0 1px 2px rgba(15,61,76,.06), 0 1px 3px rgba(15,61,76,.05);
+  --shadow:0 2px 4px rgba(15,61,76,.05), 0 6px 16px -6px rgba(15,61,76,.14);
+  --shadow-lg:0 4px 8px rgba(15,61,76,.06), 0 16px 32px -12px rgba(15,61,76,.20);
+
+  /* Offline-safe stacks: Lora/Raleway if installed, otherwise system faces. */
+  --font-display:"Lora", Georgia, "Times New Roman", serif;
+  --font-body:"Raleway", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --t:200ms cubic-bezier(.4,0,.2,1);
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --color-primary:#22D3EE;
+    --color-on-primary:#052A33;
+    --color-accent:#34D399;
+    --color-on-accent:#04291D;
+    --color-background:#081C23;
+    --color-surface:#0F2A33;
+    --color-surface-2:#143440;
+    --color-foreground:#E4F6FA;
+    --color-muted-fg:#9CC3CF;
+    --color-muted:#143440;
+    --color-border:#2A6577;
+    --color-border-strong:#4A7B8B;
+    --color-destructive:#FCA5A5;
+    --color-ring:#22D3EE;
+
+    --dot-breakfast:#FBBF24;
+    --dot-lunch:#22D3EE;
+    --dot-dinner:#C4B5FD;
+    --dot-snack:#34D399;
+
+    --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CC3CF' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+
+    --shadow-sm:0 1px 2px rgba(0,0,0,.30);
+    --shadow:0 2px 4px rgba(0,0,0,.28), 0 8px 20px -8px rgba(0,0,0,.50);
+    --shadow-lg:0 4px 8px rgba(0,0,0,.30), 0 18px 36px -14px rgba(0,0,0,.60);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; padding:0 var(--space-4) var(--space-7);
+  background:var(--color-background); color:var(--color-foreground);
+  font-family:var(--font-body); font-size:16px; line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1240px; margin:0 auto}
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+:where(a,button,select,input,summary):focus-visible{
+  outline:2px solid var(--color-ring); outline-offset:2px; border-radius:var(--radius-sm);
+}
+
+/* ---------- Header ---------- */
+.site-head{padding:var(--space-6) 0 var(--space-5)}
+.site-head h1{
+  font-family:var(--font-display); font-weight:600; letter-spacing:-.01em;
+  font-size:clamp(1.75rem,4.5vw,2.5rem); line-height:1.15; margin:0 0 var(--space-2);
+}
+.tagline{margin:0 0 var(--space-5); color:var(--color-muted-fg); max-width:64ch}
+.chips{display:flex; flex-wrap:wrap; gap:var(--space-2); margin:0 0 var(--space-4); padding:0; list-style:none}
+.chip{
+  display:inline-flex; align-items:baseline; gap:6px;
+  background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:999px; padding:6px 14px; box-shadow:var(--shadow-sm); font-size:.875rem;
+}
+.chip b{font-weight:600; font-variant-numeric:tabular-nums}
+.chip span{color:var(--color-muted-fg); font-size:.8125rem}
+.legend{display:flex; flex-wrap:wrap; gap:var(--space-4); padding:0; margin:0; list-style:none; font-size:.875rem; color:var(--color-muted-fg)}
+.legend li{display:inline-flex; align-items:center; gap:7px}
+.dot{width:10px; height:10px; border-radius:50%; flex:none; background:var(--color-muted-fg)}
+.dot-breakfast{background:var(--dot-breakfast)}
+.dot-lunch{background:var(--dot-lunch)}
+.dot-dinner{background:var(--dot-dinner)}
+.dot-snack{background:var(--dot-snack)}
+
+/* ---------- Toolbar ---------- */
+.toolbar{
+  position:sticky; top:0; z-index:20;
+  display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2);
+  padding:var(--space-3);
+  margin:0 calc(var(--space-4) * -1) var(--space-4);
+  background:color-mix(in srgb, var(--color-background) 88%, transparent);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--color-border);
+}
+.toolbar > .spacer{flex:1 1 auto}
+.group{display:inline-flex; gap:var(--space-1); background:var(--color-muted); padding:4px; border-radius:999px}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:44px; padding:0 16px; cursor:pointer;
+  font-family:inherit; font-size:.9375rem; font-weight:600; color:var(--color-foreground);
+  background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:999px; box-shadow:var(--shadow-sm);
+  transition:background var(--t), color var(--t), box-shadow var(--t), transform var(--t);
+}
+.btn:hover{box-shadow:var(--shadow); transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn svg{width:18px; height:18px; flex:none}
+.btn-quiet{background:transparent; border-color:transparent; box-shadow:none; min-height:36px; padding:0 14px}
+.btn-quiet:hover{background:var(--color-surface); box-shadow:var(--shadow-sm)}
+.btn-quiet[aria-pressed="true"], .btn-quiet[aria-selected="true"]{
+  background:var(--color-primary); color:var(--color-on-primary); box-shadow:var(--shadow-sm);
+}
+.btn-primary{background:var(--color-accent); color:var(--color-on-accent); border-color:transparent}
+.btn-primary:hover{background:color-mix(in srgb, var(--color-accent) 88%, #000)}
+
+/* Touch: full 44px targets, and keep the sticky toolbar to one scrollable
+   row instead of letting it wrap to a quarter of a phone screen. */
+@media (pointer: coarse), (max-width: 760px){
+  .btn-quiet{min-height:44px}
+  .toolbar{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+  .toolbar::-webkit-scrollbar{display:none}
+  .toolbar > .spacer{display:none}
+  .toolbar > *{flex:none}
+}
+
+/* ---------- Progress ---------- */
+.progress{
+  display:flex; align-items:center; gap:var(--space-4);
+  background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:var(--radius); box-shadow:var(--shadow-sm);
+  padding:var(--space-3) var(--space-4); margin-bottom:var(--space-5);
+}
+.progress p{margin:0; font-size:.9375rem; white-space:nowrap}
+.progress b{font-variant-numeric:tabular-nums; font-size:1.125rem}
+.track{flex:1; height:10px; background:var(--color-muted); border-radius:999px; overflow:hidden}
+.fill{height:100%; width:0; background:var(--color-accent); border-radius:999px; transition:width 300ms cubic-bezier(.4,0,.2,1)}
+
+/* ---------- Day grid ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(290px,1fr)); gap:var(--space-5)}
+.day{
+  background:var(--color-surface); border:1.5px solid var(--color-border);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:var(--space-4);
+  transition:box-shadow var(--t), border-color var(--t);
+  /* Base state is fully visible; motion only nudges transform. Never gate
+     visibility on animation — backgrounded tabs never advance it. */
+  transform:translateY(6px); animation:rise 320ms cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes rise{to{transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){
+  .day{animation:none; transform:none}
+  *{transition-duration:1ms !important; animation-duration:1ms !important}
+}
+.day:hover{box-shadow:var(--shadow-lg)}
+.day.is-complete{border-color:var(--color-accent); background:var(--color-surface-2)}
+/* Rule under the day title gives each card a clear header band, so the grid
+   reads as fourteen separate days rather than one continuous surface. */
+.day-head{
+  display:flex; align-items:center; justify-content:space-between; gap:var(--space-2);
+  padding-bottom:var(--space-3); margin-bottom:var(--space-3);
+  border-bottom:2px solid var(--color-border);
+}
+.day-head h3{font-family:var(--font-display); font-size:1.25rem; font-weight:600; margin:0}
+.badge{
+  font-size:.6875rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--color-muted-fg); background:var(--color-muted);
+  padding:4px 9px; border-radius:999px;
+}
+.day.is-complete .badge{background:var(--color-accent); color:var(--color-on-accent)}
+
+.slot{padding:var(--space-3) 0; border-top:1px solid var(--color-border)}
+.slot:first-of-type{border-top:0; padding-top:0}
+.slot-head{display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); margin-bottom:6px}
+.slot-label{
+  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
+  font-size:.8125rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--color-muted-fg);
+}
+
+select{
+  width:100%; min-height:44px; padding:9px 38px 9px 12px; cursor:pointer;
+  font-family:inherit; font-size:.9375rem; color:var(--color-foreground);
+  background-color:var(--color-surface-2);
+  background-image:var(--chevron);
+  background-repeat:no-repeat; background-position:right 12px center; background-size:16px;
+  border:1px solid var(--color-border); border-radius:var(--radius-sm);
+  appearance:none; -webkit-appearance:none;
+  transition:border-color var(--t);
+}
+select:hover{border-color:var(--color-border-strong)}
+.slot.is-done select{color:var(--color-muted-fg); text-decoration:line-through}
+.print-value{display:none}
+
+/* Checkbox: native input, 44x44 hit area, 3:1 border, SVG tick (no emoji). */
+.check{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:44px; height:44px; margin:-10px -10px -10px 0; cursor:pointer; flex:none;
+}
+.check input{position:absolute; opacity:0; width:24px; height:24px; margin:0; cursor:pointer}
+.box{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:24px; border-radius:7px;
+  border:2px solid var(--color-border-strong); background:var(--color-surface);
+  transition:background var(--t), border-color var(--t);
+}
+.box svg{width:15px; height:15px; stroke:var(--color-on-accent); stroke-width:3.2; opacity:0; transition:opacity var(--t)}
+.check input:checked + .box{background:var(--color-accent); border-color:var(--color-accent)}
+.check input:checked + .box svg{opacity:1}
+.check input:focus-visible + .box{outline:2px solid var(--color-ring); outline-offset:2px}
+.check:hover .box{border-color:var(--color-accent)}
+
+/* ---------- Add food ---------- */
+.panel{
+  background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:var(--space-5);
+}
+.panel > p{margin:0 0 var(--space-5); color:var(--color-muted-fg); max-width:68ch}
+.managers{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:var(--space-5)}
+.manager h3{display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-size:1.125rem; margin:0}
+.count{
+  font-family:var(--font-body); font-size:.8125rem; font-weight:600; margin-left:auto;
+  color:var(--color-muted-fg); background:var(--color-muted); padding:3px 9px; border-radius:999px;
+}
+.add-row{display:flex; gap:var(--space-2); margin:var(--space-3) 0}
+.add-row input[type=text]{
+  flex:1; min-width:0; min-height:44px; padding:9px 12px;
+  font-family:inherit; font-size:.9375rem; color:var(--color-foreground);
+  background:var(--color-surface-2); border:1px solid var(--color-border);
+  border-radius:var(--radius-sm); transition:border-color var(--t);
+}
+.add-row input[type=text]::placeholder{color:var(--color-muted-fg)}
+.add-row input[type=text]:hover{border-color:var(--color-border-strong)}
+.added{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:var(--space-2)}
+.added li{
+  display:flex; align-items:center; gap:var(--space-2);
+  background:var(--color-surface-2); border:1px solid var(--color-border);
+  border-radius:var(--radius-sm); padding:8px 8px 8px 12px; font-size:.9375rem;
+}
+.added li span{flex:1; min-width:0; overflow-wrap:anywhere}
+.remove{
+  display:inline-flex; align-items:center; justify-content:center; flex:none;
+  width:44px; height:44px; cursor:pointer;
+  background:transparent; border:1px solid transparent; border-radius:var(--radius-sm);
+  color:var(--color-muted-fg); transition:background var(--t), color var(--t);
+}
+.remove:hover{background:var(--color-muted); color:var(--color-destructive)}
+.remove svg{width:17px; height:17px}
+.empty{margin:0; font-size:.875rem; color:var(--color-muted-fg); font-style:italic}
+
+/* ---------- Reference ---------- */
+.reference{margin-top:var(--space-7)}
+.reference h2{font-family:var(--font-display); font-size:1.5rem; font-weight:600; margin:0 0 var(--space-4)}
+details{
+  background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:var(--space-3);
+  overflow:hidden;
+}
+summary{
+  display:flex; align-items:center; gap:10px; cursor:pointer; list-style:none;
+  padding:var(--space-4); font-weight:600; min-height:44px;
+}
+summary::-webkit-details-marker{display:none}
+summary .chev{width:18px; height:18px; flex:none; color:var(--color-muted-fg); transition:transform var(--t)}
+details[open] summary .chev{transform:rotate(90deg)}
+summary:hover{background:var(--color-surface-2)}
+.details-body{padding:0 var(--space-4) var(--space-4)}
+.details-body h4{font-family:var(--font-display); font-size:1rem; margin:var(--space-4) 0 var(--space-2)}
+.details-body h4:first-child{margin-top:0}
+.details-body ul{margin:0 0 var(--space-3); padding-left:1.25rem}
+.details-body li{margin-bottom:6px}
+.details-body p{margin:0 0 var(--space-3); max-width:72ch}
+.cols{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0 var(--space-5)}
+
+.note{
+  display:flex; gap:var(--space-3); align-items:flex-start;
+  margin-top:var(--space-5); padding:var(--space-4);
+  background:var(--color-muted); border-radius:var(--radius);
+  font-size:.9375rem; color:var(--color-muted-fg);
+}
+.note svg{width:20px; height:20px; flex:none; margin-top:2px}
+.note p{margin:0}
+.disclaimer{
+  margin-top:var(--space-6); padding-top:var(--space-4);
+  border-top:1px solid var(--color-border);
+  font-size:.875rem; color:var(--color-muted-fg);
+}
+
+[hidden]{display:none !important}
+
+/* ---------- Print (spec §8) ---------- */
+@media print{
+  :root{
+    --color-background:#fff; --color-surface:#fff; --color-surface-2:#fff;
+    --color-foreground:#000; --color-muted-fg:#3a3a3a; --color-muted:#fff;
+    --color-border:#bbb; --color-border-strong:#999;
+    --shadow-sm:none; --shadow:none; --shadow-lg:none;
+  }
+  @page{margin:14mm}
+  body{padding:0; font-size:11pt; background:#fff}
+  .toolbar, .progress, .check, .note, .no-print{display:none !important}
+  .site-head{padding:0 0 10pt}
+  .chips{margin-bottom:8pt}
+  .grid{grid-template-columns:1fr 1fr; gap:8pt}
+  .day{
+    break-inside:avoid; page-break-inside:avoid;
+    border:1px solid #bbb; box-shadow:none; padding:8pt;
+    transform:none !important; animation:none !important;
+  }
+  select{display:none}
+  .print-value{display:block; font-size:10.5pt; padding:1pt 0}
+  .slot{padding:5pt 0}
+  details{border:0; box-shadow:none; margin-bottom:6pt; break-inside:avoid}
+  summary{padding:4pt 0; font-size:12pt}
+  summary .chev{display:none}
+  .details-body{padding:0}
+  .reference{margin-top:14pt}
+  a{text-decoration:none; color:#000}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="site-head">
+  <h1>2-Week Meal Planner</h1>
+  <p class="tagline">A general low-carb, high-protein plan with Filipino-friendly dishes. Carbohydrate sits at breakfast so lunch and dinner stay light — no rice, just cauliflower rice, extra vegetables, or a bigger portion of protein.</p>
+  <ul class="chips">
+    <li class="chip"><b>2,000–2,200</b> <span>kcal / day</span></li>
+    <li class="chip"><b>180–190 g</b> <span>protein</span></li>
+    <li class="chip"><b>75–100 g</b> <span>net carbs</span></li>
+    <li class="chip"><b>120–140 g</b> <span>fat</span></li>
+    <li class="chip"><b>3–4 L</b> <span>water</span></li>
+  </ul>
+  <ul class="legend">
+    <li><span class="dot dot-breakfast"></span> Breakfast</li>
+    <li><span class="dot dot-lunch"></span> Lunch</li>
+    <li><span class="dot dot-dinner"></span> Dinner</li>
+    <li><span class="dot dot-snack"></span> Snack</li>
+  </ul>
+</header>
+
+<div class="toolbar no-print" role="toolbar" aria-label="Planner controls">
+  <div class="group" role="tablist" aria-label="View">
+    <button class="btn btn-quiet" role="tab" id="tab-plan" aria-selected="true" aria-controls="view-plan" data-tab="plan">Plan</button>
+    <button class="btn btn-quiet" role="tab" id="tab-add" aria-selected="false" aria-controls="view-add" data-tab="add">Add food</button>
+  </div>
+  <div class="group" id="week-filter" role="group" aria-label="Filter days">
+    <button class="btn btn-quiet" aria-pressed="true" data-week="all">All 14 days</button>
+    <button class="btn btn-quiet" aria-pressed="false" data-week="1">Week 1</button>
+    <button class="btn btn-quiet" aria-pressed="false" data-week="2">Week 2</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn" id="btn-suggested" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    Suggested plan
+  </button>
+  <button class="btn" id="btn-clear" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    Clear checks
+  </button>
+  <button class="btn btn-primary" id="btn-print" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+    Print / Save PDF
+  </button>
+</div>
+
+<section id="view-plan" role="tabpanel" aria-labelledby="tab-plan">
+  <div class="progress no-print">
+    <p><b id="done-count">0</b> <span>of 42 main meals done</span></p>
+    <div class="track" role="progressbar" aria-labelledby="done-count" aria-valuemin="0" aria-valuemax="42" aria-valuenow="0">
+      <div class="fill" id="progress-fill"></div>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<section id="view-add" role="tabpanel" aria-labelledby="tab-add" hidden>
+  <div class="panel">
+    <p>Found a dish you like? Add it here and it becomes a choice in every day's dropdown for that meal. Additions last for this session — print or save a PDF to keep a plan, or add favourites to the <code>BASE_MEALS</code> list in this file to keep them for good.</p>
+    <div class="managers" id="managers"></div>
+  </div>
+</section>
+
+<section class="reference">
+  <h2>Reference</h2>
+
+  <details>
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Ground rules</summary>
+    <div class="details-body">
+      <ul>
+        <li><b>No rice at lunch and dinner.</b> Swap in cauliflower rice, double the vegetables, or take a larger portion of protein.</li>
+        <li><b>Protein at every meal</b> — roughly a palm-and-a-half sized portion, 40–50 g per main meal.</li>
+        <li><b>Carbs live at breakfast</b> — oats, fruit, and smoothies early in the day, not late.</li>
+        <li><b>Vegetables fill half the plate</b> at lunch and dinner. Leafy greens, sitaw, sayote, kalabasa, pechay, kangkong, cabbage.</li>
+        <li><b>Cook with real fat</b> — olive or coconut oil, whole eggs, avocado, nuts. Skip margarine and fried street food.</li>
+        <li><b>Water first.</b> 3–4 litres a day. No soft drinks, no sweetened juice, no powdered iced tea.</li>
+        <li><b>Sauces are the hidden carb.</b> Banana ketchup, sweet chilli, hoisin, and gravy add up fast — use vinegar, calamansi, soy, garlic, and chilli instead.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Fruit allowance</summary>
+    <div class="details-body">
+      <p>Two servings a day, taken at breakfast or as a morning snack — not at night.</p>
+      <div class="cols">
+        <div>
+          <h4>Best choices</h4>
+          <ul>
+            <li>Berries — strawberry, blueberry</li>
+            <li>Papaya (1 thick slice)</li>
+            <li>Apple (1 medium)</li>
+            <li>Guava (2 small)</li>
+            <li>Pomelo (3–4 segments)</li>
+            <li>Watermelon (1 cup)</li>
+          </ul>
+        </div>
+        <div>
+          <h4>In moderation</h4>
+          <ul>
+            <li>Banana — lakatan or saba (1 small)</li>
+            <li>Mango (half a medium)</li>
+            <li>Pineapple (1 slice)</li>
+            <li>Orange (1 medium)</li>
+          </ul>
+          <h4>Skip</h4>
+          <ul>
+            <li>Dried fruit, fruit juice, canned fruit in syrup</li>
+            <li>Lanzones, chico, and durian in quantity</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Snack ideas</summary>
+    <div class="details-body">
+      <p>One snack a day is optional — take it only if you are genuinely hungry between meals. Every option here leads with protein or fat, not starch.</p>
+      <ul>
+        <li>Two hard-boiled eggs with a pinch of salt</li>
+        <li>A small handful of almonds, peanuts, or cashews (about 30 g)</li>
+        <li>Greek yogurt with a few berries</li>
+        <li>String cheese with apple slices</li>
+        <li>Protein shake mixed with water</li>
+        <li>Cucumber and carrot sticks with hummus</li>
+        <li>A small banana with a tablespoon of peanut butter</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Weekly shopping list</summary>
+    <div class="details-body">
+      <div class="cols">
+        <div>
+          <h4>Protein</h4>
+          <ul>
+            <li>Chicken breast and thigh — 3 kg</li>
+            <li>Lean pork kasim / chops — 1.5 kg</li>
+            <li>Lean beef (nilaga or tapa cut) — 1 kg</li>
+            <li>Bangus, tilapia, lapu-lapu — 2 kg</li>
+            <li>Shrimp or squid — 500 g</li>
+            <li>Eggs — 3 dozen</li>
+            <li>Canned tuna in water — 4 tins</li>
+            <li>Whey protein — 1 tub</li>
+          </ul>
+          <h4>Fruit</h4>
+          <ul>
+            <li>Papaya, apples, guava</li>
+            <li>Bananas (lakatan or saba)</li>
+            <li>Berries, fresh or frozen</li>
+            <li>Calamansi — 1/2 kg</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Vegetables</h4>
+          <ul>
+            <li>Cauliflower — 3 heads (for cauliflower rice)</li>
+            <li>Kangkong, pechay, malunggay</li>
+            <li>Sitaw, okra, talong</li>
+            <li>Sayote, kalabasa, upo</li>
+            <li>Cabbage, broccoli, carrots</li>
+            <li>Tomato, onion, garlic, ginger</li>
+            <li>Bell pepper, chilli</li>
+          </ul>
+          <h4>Pantry &amp; dairy</h4>
+          <ul>
+            <li>Rolled oats — 1 kg</li>
+            <li>Greek yogurt, cottage cheese</li>
+            <li>Fresh milk — 2 L</li>
+            <li>Olive oil, coconut oil</li>
+            <li>Peanut butter (no added sugar)</li>
+            <li>Almonds, chia, flaxseed</li>
+            <li>Vinegar, soy sauce, patis, black pepper</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Practical notes</summary>
+    <div class="details-body">
+      <h4>Prep</h4>
+      <p>Cook proteins in bulk over the weekend — a tray of chicken, a pot of adobo, two dozen boiled eggs. Rice cauliflower in a food processor and freeze it in portions. Wash and cut vegetables the night before so a weekday meal is ten minutes, not forty.</p>
+      <h4>Eating out</h4>
+      <p>Order grilled or sinigang over fried and sweet. Ask for the rice to be left off — most carinderias and restaurants will swap in extra vegetables. Inasal without the rice and with extra atchara is a reliable default.</p>
+      <h4>Alcohol</h4>
+      <p>Beer is liquid carbohydrate. If you drink, keep it to two servings a week and choose spirits with soda water and calamansi over beer or sweet mixers.</p>
+      <h4>Tracking progress</h4>
+      <p>Weigh in once a week, same day, same time, after waking and before eating. The scale moves unevenly — the trend over three weeks is the signal, not any single morning.</p>
+    </div>
+  </details>
+
+  <div class="note no-print">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    <p><b>Keep a copy.</b> This planner does not save to your device — your picks, check-marks, and added dishes reset when the page reloads. Use <b>Print / Save PDF</b> to keep the plan you built.</p>
+  </div>
+
+  <p class="disclaimer">This app supports meal planning and is not medical advice. Anyone on regular medication or with recently flagged bloodwork should consult their doctor before a significant dietary change.</p>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ---------- Meal library (spec §6) ---------- */
+const BASE_MEALS = {
+  breakfast: [
+    "Three-egg omelette with tomato, onion & spinach + slice of papaya",
+    "Rolled oats with milk, banana & a spoon of peanut butter",
+    "Tortang talong with 2 eggs + sliced mango",
+    "Greek yogurt with berries, chia & almonds",
+    "Scrambled eggs with tinapa flakes + small steamed kamote",
+    "Protein smoothie — milk, banana, peanut butter, whey",
+    "Three boiled eggs with avocado & tomato salad",
+    "Oats with cinnamon, apple & a scoop of whey",
+    "Lean longganisa (2 pcs) with 2 eggs & atchara",
+    "Cottage cheese with pineapple & flaxseed",
+    "Egg & malunggay omelette + 1 orange",
+    "Overnight oats with milk, cacao & peanut butter",
+    "Daing na bangus (small) with 2 eggs & sliced tomato",
+    "Banana-oat protein pancakes with Greek yogurt"
+  ],
+  lunch: [
+    "Chicken adobo (skinless thigh) with cauliflower rice & sitaw",
+    "Grilled bangus belly with ensaladang talong",
+    "Lean beef tapa with garlic cauliflower rice & atchara",
+    "Chicken tinola heavy on malunggay & sayote",
+    "Pork sinigang (lean kasim) with kangkong, labanos & gabi",
+    "Grilled chicken breast with pinakbet",
+    "Ginataang tilapia with kalabasa & string beans",
+    "Lean beef nilaga with cabbage, pechay & sayote",
+    "Chicken curry (light coconut) with cauliflower rice",
+    "Pork bistek with sautéed cabbage & onions",
+    "Tuna kinilaw with tomato, onion & cucumber salad",
+    "Chopsuey with chicken breast & quail eggs",
+    "Grilled pork chop with ensaladang talong & tomato",
+    "Sinigang na hipon with kangkong & okra"
+  ],
+  dinner: [
+    "Grilled tilapia with ensaladang mangga & tomato",
+    "Chicken inasal (skinless) with grilled eggplant",
+    "Lean beef kaldereta (no potato) with sautéed green beans",
+    "Pesang isda with pechay & cabbage",
+    "Ginisang munggo with lean pork & malunggay",
+    "Baked chicken thigh with roasted kalabasa & broccoli",
+    "Sinigang na baboy (lean) with kangkong & labanos",
+    "Grilled squid with ensaladang talong",
+    "Chicken afritada (no potato) with bell pepper & carrots",
+    "Pork adobo sa gata (lean) with sautéed sitaw",
+    "Steamed lapu-lapu with ginger, leeks & sayote",
+    "Bulalo broth with lean beef, cabbage & half a corn cob",
+    "Lean chicken sisig (light mayo) with cucumber salad",
+    "Ginataang alimasag with kalabasa & malunggay"
+  ],
+  snack: [
+    "No snack",
+    "Two hard-boiled eggs",
+    "Small handful of almonds or peanuts (30 g)",
+    "Greek yogurt with a few berries",
+    "String cheese with apple slices",
+    "Protein shake with water",
+    "Cucumber & carrot sticks with hummus",
+    "Small banana with a tablespoon of peanut butter"
+  ]
+};
+
+const CATS = ["breakfast", "lunch", "dinner", "snack"];
+const CORE = ["breakfast", "lunch", "dinner"];
+const LABELS = {breakfast:"Breakfast", lunch:"Lunch", dinner:"Dinner", snack:"Snack"};
+const DAYS = 14;
+
+/* ---------- State (in memory only — spec §9) ---------- */
+const added = {breakfast:[], lunch:[], dinner:[], snack:[]};
+let days = [];
+let weekFilter = "all";
+
+const optionsFor = cat => BASE_MEALS[cat].concat(added[cat]);
+
+/* Suggested plan maps day N to option N, reproducing the written plan. */
+function buildSuggested(){
+  days = Array.from({length: DAYS}, (_, i) => ({
+    picks: {
+      breakfast: BASE_MEALS.breakfast[i % BASE_MEALS.breakfast.length],
+      lunch: BASE_MEALS.lunch[i % BASE_MEALS.lunch.length],
+      dinner: BASE_MEALS.dinner[i % BASE_MEALS.dinner.length],
+      snack: BASE_MEALS.snack[0]
+    },
+    done: {breakfast:false, lunch:false, dinner:false, snack:false}
+  }));
+}
+
+/* Selections are stored as meal TEXT, not an index, so adding or removing
+   dishes never corrupts them. If a stored dish is gone, fall back safely. */
+function reconcile(){
+  days.forEach(day => {
+    CATS.forEach(cat => {
+      const opts = optionsFor(cat);
+      if (!opts.includes(day.picks[cat])) day.picks[cat] = opts[0];
+    });
+  });
+}
+
+/* ---------- Elements ---------- */
+const grid = document.getElementById("grid");
+const managers = document.getElementById("managers");
+const doneCount = document.getElementById("done-count");
+const progressFill = document.getElementById("progress-fill");
+const progressBar = progressFill.parentElement;
+
+const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
+const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
+
+/* ---------- Render: plan ---------- */
+function renderGrid(){
+  reconcile();
+  grid.textContent = "";
+  const frag = document.createDocumentFragment();
+
+  days.forEach((day, i) => {
+    const week = i < 7 ? 1 : 2;
+    if (weekFilter !== "all" && String(week) !== weekFilter) return;
+
+    const card = document.createElement("article");
+    card.className = "day";
+    card.style.animationDelay = Math.min(i, 8) * 25 + "ms";
+    if (CORE.every(c => day.done[c])) card.classList.add("is-complete");
+
+    const head = document.createElement("header");
+    head.className = "day-head";
+    head.innerHTML = '<h3>Day ' + (i + 1) + '</h3><span class="badge">Week ' + week + '</span>';
+    card.appendChild(head);
+
+    CATS.forEach(cat => {
+      const id = "d" + i + "-" + cat;
+      const slot = document.createElement("div");
+      slot.className = "slot" + (day.done[cat] ? " is-done" : "");
+
+      const slotHead = document.createElement("div");
+      slotHead.className = "slot-head";
+      slotHead.innerHTML =
+        '<label class="slot-label" for="' + id + '"><span class="dot dot-' + cat + '"></span>' + LABELS[cat] + '</label>';
+
+      const check = document.createElement("label");
+      check.className = "check";
+      check.innerHTML =
+        '<input type="checkbox"' + (day.done[cat] ? " checked" : "") + '>' +
+        '<span class="box">' + SVG_CHECK + '</span>' +
+        '<span class="sr-only">Mark day ' + (i + 1) + ' ' + LABELS[cat].toLowerCase() + ' as eaten</span>';
+      slotHead.appendChild(check);
+      slot.appendChild(slotHead);
+
+      const select = document.createElement("select");
+      select.id = id;
+      optionsFor(cat).forEach(meal => {
+        const opt = document.createElement("option");
+        opt.value = meal;
+        opt.textContent = meal;
+        if (meal === day.picks[cat]) opt.selected = true;
+        select.appendChild(opt);
+      });
+      slot.appendChild(select);
+
+      /* Flattened text for print — selects don't print their chosen value. */
+      const printValue = document.createElement("span");
+      printValue.className = "print-value";
+      printValue.textContent = day.picks[cat];
+      slot.appendChild(printValue);
+
+      select.addEventListener("change", e => {
+        day.picks[cat] = e.target.value;
+        printValue.textContent = e.target.value;
+      });
+
+      /* Update in place rather than re-rendering: a full re-render destroys
+         the focused checkbox and drops keyboard users back to <body>. */
+      check.querySelector("input").addEventListener("change", e => {
+        day.done[cat] = e.target.checked;
+        slot.classList.toggle("is-done", e.target.checked);
+        card.classList.toggle("is-complete", CORE.every(c => day.done[c]));
+        renderProgress();
+      });
+
+      card.appendChild(slot);
+    });
+
+    frag.appendChild(card);
+  });
+
+  grid.appendChild(frag);
+  renderProgress();
+}
+
+function renderProgress(){
+  let n = 0;
+  days.forEach(day => CORE.forEach(c => { if (day.done[c]) n++; }));
+  const total = DAYS * CORE.length;
+  doneCount.textContent = n;
+  progressFill.style.width = (n / total * 100) + "%";
+  progressBar.setAttribute("aria-valuenow", n);
+}
+
+/* ---------- Render: Add food (spec §5) ---------- */
+function renderManagers(){
+  managers.textContent = "";
+  const frag = document.createDocumentFragment();
+
+  CATS.forEach(cat => {
+    const box = document.createElement("div");
+    box.className = "manager";
+
+    const h = document.createElement("h3");
+    h.innerHTML =
+      '<span class="dot dot-' + cat + '"></span>' + LABELS[cat] +
+      '<span class="count">' + optionsFor(cat).length + ' options</span>';
+    box.appendChild(h);
+
+    const form = document.createElement("form");
+    form.className = "add-row";
+    form.innerHTML =
+      '<label class="sr-only" for="add-' + cat + '">Add a ' + LABELS[cat].toLowerCase() + ' dish</label>' +
+      '<input type="text" id="add-' + cat + '" placeholder="e.g. Grilled liempo with atchara" autocomplete="off">' +
+      '<button type="submit" class="btn btn-primary">Add</button>';
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const input = form.querySelector("input");
+      const value = input.value.trim();
+      input.value = "";
+      /* Empty and duplicate entries are ignored. */
+      if (!value) return;
+      if (optionsFor(cat).some(m => m.toLowerCase() === value.toLowerCase())) return;
+      added[cat].push(value);
+      renderManagers();
+      renderGrid();
+      document.getElementById("add-" + cat).focus();
+    });
+    box.appendChild(form);
+
+    if (added[cat].length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "empty";
+      empty.textContent = "Nothing added yet — the " + BASE_MEALS[cat].length + " built-in options are all available.";
+      box.appendChild(empty);
+    } else {
+      const list = document.createElement("ul");
+      list.className = "added";
+      added[cat].forEach((meal, idx) => {
+        const li = document.createElement("li");
+        li.innerHTML = '<span></span><button class="remove" type="button">' + SVG_TRASH + '</button>';
+        li.querySelector("span").textContent = meal;
+        const btn = li.querySelector(".remove");
+        btn.setAttribute("aria-label", 'Remove "' + meal + '" from ' + LABELS[cat].toLowerCase());
+        btn.addEventListener("click", () => {
+          added[cat].splice(idx, 1);
+          renderManagers();
+          renderGrid();   /* reconcile() puts any orphaned day back on a valid option */
+        });
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+    }
+
+    frag.appendChild(box);
+  });
+
+  managers.appendChild(frag);
+}
+
+/* ---------- Controls ---------- */
+document.querySelectorAll("[data-tab]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b === btn)));
+    document.getElementById("view-plan").hidden = tab !== "plan";
+    document.getElementById("view-add").hidden = tab !== "add";
+  });
+});
+
+document.querySelectorAll("#week-filter [data-week]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    weekFilter = btn.dataset.week;
+    document.querySelectorAll("#week-filter [data-week]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+    renderGrid();
+  });
+});
+
+/* Restore the suggested picks but keep whatever the user has ticked off. */
+document.getElementById("btn-suggested").addEventListener("click", () => {
+  const checks = days.map(d => ({...d.done}));
+  buildSuggested();
+  days.forEach((d, i) => { d.done = checks[i]; });
+  renderGrid();
+});
+
+document.getElementById("btn-clear").addEventListener("click", () => {
+  days.forEach(d => CATS.forEach(c => { d.done[c] = false; }));
+  renderGrid();
+});
+
+document.getElementById("btn-print").addEventListener("click", () => {
+  document.getElementById("tab-plan").click();
+  window.print();
+});
+
+/* Expand every reference section for print, however print was triggered. */
+window.addEventListener("beforeprint", () => {
+  document.querySelectorAll("details").forEach(d => { d.open = true; });
+});
+
+/* ---------- Boot ---------- */
+buildSuggested();
+renderGrid();
+renderManagers();
+</script>
+</body>
+</html>

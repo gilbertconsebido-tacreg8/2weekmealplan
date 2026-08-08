@@ -3,869 +3,534 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>2-Week Meal Planner</title>
-<meta name="description" content="Plan two weeks of low-carb, Filipino-friendly meals. Pick a dish for every slot, tick them off, print or save as PDF.">
+<title>2-Week Meal Planner — plan two weeks of low-carb meals in ten minutes</title>
+<meta name="description" content="A free, no-signup meal planner. Fourteen days of low-carb, Filipino-friendly meals you pick from dropdowns, tick off as you eat, and print or save as a PDF.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230891B2'/%3E%3Ccircle cx='16' cy='18' r='8.5' fill='none' stroke='%23ECFEFF' stroke-width='2'/%3E%3Cpath d='M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z' fill='%2334D399'/%3E%3Cpath d='M16 6.5v4.5' stroke='%2334D399' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230891B2'/%3E%3Ccircle cx='16' cy='18' r='8.5' fill='none' stroke='%23ECFEFF' stroke-width='2'/%3E%3Cpath d='M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z' fill='%2334D399'/%3E%3Cpath d='M16 6.5v4.5' stroke='%2334D399' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
-/* =========================================================================
-   2-Week Meal Planner
-   Single file. No frameworks, no network calls, no storage. (spec §9)
-   Design system: Soft UI Evolution — calm cyan primary + health green accent.
-   ========================================================================= */
-
+/* Landing page — same token system as the planner, no network requests. */
 :root{
-  --color-primary:#0E7490;
-  --color-on-primary:#FFFFFF;
-  --color-accent:#047857;
-  --color-on-accent:#FFFFFF;
-  --color-background:#ECFEFF;
-  --color-surface:#FFFFFF;
-  --color-surface-2:#F5FBFD;
-  --color-foreground:#0F3D4C;
-  --color-muted-fg:#3D6675;
-  --color-muted:#E8F1F6;
-  --color-border:#D6EFF5;
-  --color-border-strong:#5F8B9A;
-  --color-destructive:#B91C1C;
-  --color-ring:#0E7490;
+  --primary:#0E7490;
+  --on-primary:#FFFFFF;
+  --accent:#047857;
+  --on-accent:#FFFFFF;
+  /* Canvas sits well below the white surfaces so cards, bands and the nav
+     read as distinct layers instead of one flat white sheet. */
+  --bg:#D8EDF4;
+  --surface:#FFFFFF;
+  --surface-2:#EEF7FA;
+  --fg:#0B3341;
+  --muted-fg:#37606F;
+  --muted:#DCEBF1;
+  --border:#AFD4E1;
+  --border-strong:#5F8B9A;
 
-  --dot-breakfast:#B45309;
-  --dot-lunch:#0E7490;
-  --dot-dinner:#6D28D9;
-  --dot-snack:#047857;
+  --breakfast:#B45309;
+  --lunch:#0E7490;
+  --dinner:#6D28D9;
+  --snack:#047857;
 
-  --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233D6675' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --r-sm:8px; --r:14px; --r-lg:22px; --r-xl:32px;
+  --sh-sm:0 1px 2px rgba(15,61,76,.06), 0 1px 3px rgba(15,61,76,.05);
+  --sh:0 2px 4px rgba(15,61,76,.05), 0 8px 20px -8px rgba(15,61,76,.16);
+  --sh-lg:0 4px 10px rgba(15,61,76,.07), 0 24px 48px -16px rgba(15,61,76,.24);
 
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
-  --space-5:24px; --space-6:32px; --space-7:48px;
-
-  --radius-sm:8px; --radius:14px; --radius-lg:20px;
-  --shadow-sm:0 1px 2px rgba(15,61,76,.06), 0 1px 3px rgba(15,61,76,.05);
-  --shadow:0 2px 4px rgba(15,61,76,.05), 0 6px 16px -6px rgba(15,61,76,.14);
-  --shadow-lg:0 4px 8px rgba(15,61,76,.06), 0 16px 32px -12px rgba(15,61,76,.20);
-
-  /* Offline-safe stacks: Lora/Raleway if installed, otherwise system faces. */
-  --font-display:"Lora", Georgia, "Times New Roman", serif;
-  --font-body:"Raleway", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --display:"Lora", Georgia, "Times New Roman", serif;
+  --body:"Raleway", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --t:200ms cubic-bezier(.4,0,.2,1);
 }
-
 @media (prefers-color-scheme: dark){
   :root{
-    --color-primary:#22D3EE;
-    --color-on-primary:#052A33;
-    --color-accent:#34D399;
-    --color-on-accent:#04291D;
-    --color-background:#081C23;
-    --color-surface:#0F2A33;
-    --color-surface-2:#143440;
-    --color-foreground:#E4F6FA;
-    --color-muted-fg:#9CC3CF;
-    --color-muted:#143440;
-    --color-border:#1F5262;
-    --color-border-strong:#4A7B8B;
-    --color-destructive:#FCA5A5;
-    --color-ring:#22D3EE;
-
-    --dot-breakfast:#FBBF24;
-    --dot-lunch:#22D3EE;
-    --dot-dinner:#C4B5FD;
-    --dot-snack:#34D399;
-
-    --chevron:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CC3CF' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-
-    --shadow-sm:0 1px 2px rgba(0,0,0,.30);
-    --shadow:0 2px 4px rgba(0,0,0,.28), 0 8px 20px -8px rgba(0,0,0,.50);
-    --shadow-lg:0 4px 8px rgba(0,0,0,.30), 0 18px 36px -14px rgba(0,0,0,.60);
+    --primary:#22D3EE; --on-primary:#052A33;
+    --accent:#34D399; --on-accent:#04291D;
+    --bg:#081C23; --surface:#0F2A33; --surface-2:#143440;
+    --fg:#E4F6FA; --muted-fg:#9CC3CF; --muted:#143440;
+    --border:#1F5262; --border-strong:#4A7B8B;
+    --breakfast:#FBBF24; --lunch:#22D3EE; --dinner:#C4B5FD; --snack:#34D399;
+    --sh-sm:0 1px 2px rgba(0,0,0,.3);
+    --sh:0 2px 4px rgba(0,0,0,.28), 0 10px 24px -10px rgba(0,0,0,.55);
+    --sh-lg:0 4px 10px rgba(0,0,0,.32), 0 28px 56px -18px rgba(0,0,0,.65);
   }
 }
 
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
-  margin:0; padding:0 var(--space-4) var(--space-7);
-  background:var(--color-background); color:var(--color-foreground);
-  font-family:var(--font-body); font-size:16px; line-height:1.5;
+  margin:0; background:var(--bg); color:var(--fg);
+  font-family:var(--body); font-size:16px; line-height:1.6;
   -webkit-text-size-adjust:100%;
 }
-.wrap{max-width:1240px; margin:0 auto}
-.sr-only{
-  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
-  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
-}
-:where(a,button,select,input,summary):focus-visible{
-  outline:2px solid var(--color-ring); outline-offset:2px; border-radius:var(--radius-sm);
-}
+.wrap{width:min(1160px, 100% - 40px); margin-inline:auto}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:where(a,button):focus-visible{outline:2px solid var(--primary); outline-offset:3px; border-radius:var(--r-sm)}
+h1,h2,h3{font-family:var(--display); font-weight:600; line-height:1.15; letter-spacing:-.015em; margin:0}
+p{margin:0}
+img,svg{max-width:100%}
 
-/* ---------- Header ---------- */
-.site-head{padding:var(--space-6) 0 var(--space-5)}
-.site-head h1{
-  font-family:var(--font-display); font-weight:600; letter-spacing:-.01em;
-  font-size:clamp(1.75rem,4.5vw,2.5rem); line-height:1.15; margin:0 0 var(--space-2);
+/* ---------- Buttons ---------- */
+.cta{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  min-height:56px; padding:0 30px; cursor:pointer; text-decoration:none;
+  font-family:var(--body); font-size:1.0625rem; font-weight:700; letter-spacing:.01em;
+  border-radius:999px; border:1px solid transparent;
+  transition:transform var(--t), box-shadow var(--t), background var(--t);
 }
-.tagline{margin:0 0 var(--space-5); color:var(--color-muted-fg); max-width:64ch}
-.chips{display:flex; flex-wrap:wrap; gap:var(--space-2); margin:0 0 var(--space-4); padding:0; list-style:none}
-.chip{
-  display:inline-flex; align-items:baseline; gap:6px;
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:999px; padding:6px 14px; box-shadow:var(--shadow-sm); font-size:.875rem;
-}
-.chip b{font-weight:600; font-variant-numeric:tabular-nums}
-.chip span{color:var(--color-muted-fg); font-size:.8125rem}
-.legend{display:flex; flex-wrap:wrap; gap:var(--space-4); padding:0; margin:0; list-style:none; font-size:.875rem; color:var(--color-muted-fg)}
-.legend li{display:inline-flex; align-items:center; gap:7px}
-.dot{width:10px; height:10px; border-radius:50%; flex:none; background:var(--color-muted-fg)}
-.dot-breakfast{background:var(--dot-breakfast)}
-.dot-lunch{background:var(--dot-lunch)}
-.dot-dinner{background:var(--dot-dinner)}
-.dot-snack{background:var(--dot-snack)}
+.cta-primary{background:var(--accent); color:var(--on-accent); box-shadow:var(--sh)}
+.cta-primary:hover{transform:translateY(-2px); box-shadow:var(--sh-lg)}
+.cta-secondary{background:var(--surface); color:var(--fg); border-color:var(--border); box-shadow:var(--sh-sm)}
+.cta-secondary:hover{transform:translateY(-2px); box-shadow:var(--sh)}
+.cta svg{width:19px;height:19px;flex:none}
+.cta-note{margin-top:14px; font-size:.9375rem; color:var(--muted-fg)}
 
-/* ---------- Toolbar ---------- */
-.toolbar{
-  position:sticky; top:0; z-index:20;
-  display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2);
-  padding:var(--space-3);
-  margin:0 calc(var(--space-4) * -1) var(--space-4);
-  background:color-mix(in srgb, var(--color-background) 88%, transparent);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--color-border);
+/* ---------- Nav ---------- */
+.nav{
+  position:sticky; top:0; z-index:30;
+  background:color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
 }
-.toolbar > .spacer{flex:1 1 auto}
-.group{display:inline-flex; gap:var(--space-1); background:var(--color-muted); padding:4px; border-radius:999px}
-.btn{
-  display:inline-flex; align-items:center; justify-content:center; gap:7px;
-  min-height:44px; padding:0 16px; cursor:pointer;
-  font-family:inherit; font-size:.9375rem; font-weight:600; color:var(--color-foreground);
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:999px; box-shadow:var(--shadow-sm);
-  transition:background var(--t), color var(--t), box-shadow var(--t), transform var(--t);
+.nav-in{display:flex; align-items:center; gap:16px; min-height:68px}
+.brand{display:flex; align-items:center; gap:11px; font-family:var(--display); font-weight:600; font-size:1.125rem; color:var(--fg); text-decoration:none}
+.brand-mark{width:34px;height:34px;border-radius:9px;flex:none}
+.nav-links{display:flex; gap:26px; margin-left:auto; align-items:center}
+.nav-links a{
+  display:inline-flex; align-items:center; min-height:44px;
+  color:var(--muted-fg); text-decoration:none; font-size:.9375rem; font-weight:600;
+  transition:color var(--t);
 }
-.btn:hover{box-shadow:var(--shadow); transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn svg{width:18px; height:18px; flex:none}
-.btn-quiet{background:transparent; border-color:transparent; box-shadow:none; min-height:36px; padding:0 14px}
-.btn-quiet:hover{background:var(--color-surface); box-shadow:var(--shadow-sm)}
-.btn-quiet[aria-pressed="true"], .btn-quiet[aria-selected="true"]{
-  background:var(--color-primary); color:var(--color-on-primary); box-shadow:var(--shadow-sm);
+.nav-links a:hover{color:var(--fg)}
+.nav-links a[aria-current="true"]{color:var(--fg); box-shadow:inset 0 -2px 0 var(--primary)}
+/* Specificity must beat `.nav-links a`, or the button text inherits
+   muted-fg on the accent fill and drops to ~1:1 contrast. */
+.nav-links a.nav-cta, .nav-links a.nav-cta:hover{
+  display:inline-flex; align-items:center; min-height:44px; padding:0 20px;
+  background:var(--accent); color:var(--on-accent); text-decoration:none;
+  border-radius:999px; font-weight:700; font-size:.9375rem; transition:transform var(--t)
 }
-.btn-primary{background:var(--color-accent); color:var(--color-on-accent); border-color:transparent}
-.btn-primary:hover{background:color-mix(in srgb, var(--color-accent) 88%, #000)}
+.nav-links a.nav-cta:hover{transform:translateY(-1px)}
+@media (max-width:820px){ .nav-links a:not(.nav-cta){display:none} .nav-links{margin-left:auto} }
 
-/* Touch: full 44px targets, and keep the sticky toolbar to one scrollable
-   row instead of letting it wrap to a quarter of a phone screen. */
-@media (pointer: coarse), (max-width: 760px){
-  .btn-quiet{min-height:44px}
-  .toolbar{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch}
-  .toolbar::-webkit-scrollbar{display:none}
-  .toolbar > .spacer{display:none}
-  .toolbar > *{flex:none}
-}
+/* ---------- Hero ---------- */
+.hero{padding:clamp(40px,5vw,64px) 0 clamp(36px,4.5vw,56px)}
+.hero-grid{display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(32px,5vw,64px); align-items:center}
+@media (max-width:940px){ .hero-grid{grid-template-columns:1fr; gap:40px} }
 
-/* ---------- Progress ---------- */
-.progress{
-  display:flex; align-items:center; gap:var(--space-4);
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:var(--radius); box-shadow:var(--shadow-sm);
-  padding:var(--space-3) var(--space-4); margin-bottom:var(--space-5);
+/* Hero visual. Swap .hero-art for <img src="assets/hero.jpg" alt="..."> when
+   a licensed photo is available — the frame and radius carry over unchanged. */
+.hero-visual{position:relative}
+.hero-frame{
+  position:relative; overflow:hidden;
+  border-radius:var(--r-xl); border:1px solid var(--border);
+  box-shadow:var(--sh-lg); background:var(--surface-2);
+  aspect-ratio:1/1;
 }
-.progress p{margin:0; font-size:.9375rem; white-space:nowrap}
-.progress b{font-variant-numeric:tabular-nums; font-size:1.125rem}
-.track{flex:1; height:10px; background:var(--color-muted); border-radius:999px; overflow:hidden}
-.fill{height:100%; width:0; background:var(--color-accent); border-radius:999px; transition:width 300ms cubic-bezier(.4,0,.2,1)}
+.hero-frame img{width:100%; height:100%; object-fit:cover; display:block}
+.hero-art{width:100%; height:100%; display:block}
+/* Opaque, not translucent: over a photo the glass version dropped the
+   sub-line to 3.34:1. */
+.hero-caption{
+  position:absolute; left:18px; right:18px; bottom:18px;
+  display:flex; align-items:center; gap:12px;
+  padding:14px 18px; border-radius:var(--r);
+  background:var(--surface);
+  border:1px solid var(--border); box-shadow:var(--sh);
+}
+.hero-caption b{font-family:var(--display); font-size:1rem; display:block}
+.hero-caption span{font-size:.8125rem; color:var(--muted-fg)}
+.hero-caption .swatch{width:38px;height:38px;border-radius:11px;flex:none;background:var(--muted);display:inline-flex;align-items:center;justify-content:center;color:var(--primary)}
+.hero-caption .swatch svg{width:20px;height:20px}
+.eyebrow{
+  display:inline-flex; align-items:center; gap:9px; margin-bottom:20px;
+  padding:7px 16px; border-radius:999px;
+  background:var(--surface); border:1px solid var(--border); box-shadow:var(--sh-sm);
+  font-size:.8125rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted-fg);
+}
+.eyebrow .pip{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.hero h1{font-size:clamp(2.25rem,5.6vw,4rem); margin-bottom:22px}
+.hero h1 em{font-style:normal; color:var(--primary)}
+.lede{font-size:clamp(1.0625rem,2vw,1.25rem); color:var(--muted-fg); max-width:52ch; margin-bottom:32px}
+.hero-actions{display:flex; flex-wrap:wrap; gap:14px; align-items:center}
+.proof{display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:34px; padding:0; list-style:none}
+.proof li{display:flex; align-items:center; gap:9px; font-size:.9375rem; color:var(--muted-fg)}
+.proof svg{width:19px;height:19px;flex:none;color:var(--accent)}
 
-/* ---------- Day grid ---------- */
-.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(290px,1fr)); gap:var(--space-4)}
-.day{
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:var(--space-4);
-  transition:box-shadow var(--t), border-color var(--t);
-  /* Base state is fully visible; motion only nudges transform. Never gate
-     visibility on animation — backgrounded tabs never advance it. */
-  transform:translateY(6px); animation:rise 320ms cubic-bezier(.4,0,.2,1) forwards;
+/* ---------- Sections ---------- */
+section{padding:clamp(52px,7vw,92px) 0}
+.section-head{max-width:62ch; margin-bottom:clamp(32px,4vw,52px)}
+.section-head h2{font-size:clamp(1.75rem,3.6vw,2.625rem); margin-bottom:16px}
+.section-head p{color:var(--muted-fg); font-size:1.0625rem}
+.band{background:var(--surface); border-block:1px solid var(--border)}
+
+.cols-3{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:24px}
+.feature{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:28px; box-shadow:var(--sh-sm); transition:box-shadow var(--t), transform var(--t);
 }
+.band .feature{background:var(--surface-2)}
+.feature:hover{box-shadow:var(--sh); transform:translateY(-3px)}
+.feature .ico{
+  width:48px;height:48px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--muted); color:var(--primary); margin-bottom:18px;
+}
+.feature .ico svg{width:24px;height:24px}
+.feature h3{font-size:1.1875rem; margin-bottom:9px}
+.feature p{color:var(--muted-fg); font-size:.9688rem}
+
+/* Steps */
+.steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:28px; counter-reset:step}
+.step{position:relative; padding-top:14px}
+.step::before{
+  counter-increment:step; content:counter(step);
+  display:flex; align-items:center; justify-content:center;
+  width:44px;height:44px;border-radius:50%; margin-bottom:18px;
+  background:var(--primary); color:var(--on-primary);
+  font-family:var(--display); font-size:1.25rem; font-weight:600;
+}
+.step h3{font-size:1.1875rem; margin-bottom:9px}
+.step p{color:var(--muted-fg); font-size:.9688rem}
+
+/* Stats */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:20px}
+.stat{
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--r);
+  padding:24px 20px; text-align:center;
+}
+.band .stat{background:var(--bg)}
+.stat b{display:block; font-family:var(--display); font-size:clamp(2rem,4vw,2.75rem); font-weight:600; color:var(--primary); font-variant-numeric:tabular-nums; line-height:1.1}
+.stat span{display:block; margin-top:7px; font-size:.9375rem; color:var(--muted-fg)}
+
+/* For everyone */
+.two{display:grid; grid-template-columns:1fr 1fr; gap:24px}
+@media (max-width:760px){ .two{grid-template-columns:1fr} }
+.who{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:30px; box-shadow:var(--sh-sm);
+}
+.band .who{background:var(--surface-2)}
+.who h3{font-size:1.25rem; margin-bottom:14px}
+.who ul{margin:0; padding-left:1.2rem; color:var(--muted-fg)}
+.who li{margin-bottom:9px}
+
+/* Closing CTA */
+.close-cta{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl);
+  padding:clamp(36px,5vw,60px); text-align:center; box-shadow:var(--sh-lg);
+}
+.close-cta h2{font-size:clamp(1.75rem,3.6vw,2.5rem); margin-bottom:16px}
+.close-cta p{color:var(--muted-fg); font-size:1.0625rem; max-width:56ch; margin:0 auto 30px}
+
+/* Footer */
+footer{border-top:1px solid var(--border); padding:40px 0 56px; color:var(--muted-fg); font-size:.9375rem}
+.foot-in{display:flex; flex-wrap:wrap; gap:18px 30px; align-items:center}
+footer a{color:var(--muted-fg)}
+.disclaimer{margin-top:22px; padding-top:18px; border-top:1px solid var(--border); max-width:80ch; font-size:.875rem}
+
+/* Motion: transform-only, base state always visible. */
+.rise{transform:translateY(10px); animation:rise 460ms cubic-bezier(.4,0,.2,1) forwards}
 @keyframes rise{to{transform:translateY(0)}}
 @media (prefers-reduced-motion: reduce){
-  .day{animation:none; transform:none}
+  .rise{animation:none; transform:none}
   *{transition-duration:1ms !important; animation-duration:1ms !important}
-}
-.day:hover{box-shadow:var(--shadow-lg)}
-.day.is-complete{border-color:var(--color-accent); background:var(--color-surface-2)}
-.day-head{display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); margin-bottom:var(--space-3)}
-.day-head h3{font-family:var(--font-display); font-size:1.25rem; font-weight:600; margin:0}
-.badge{
-  font-size:.6875rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--color-muted-fg); background:var(--color-muted);
-  padding:4px 9px; border-radius:999px;
-}
-.day.is-complete .badge{background:var(--color-accent); color:var(--color-on-accent)}
-
-.slot{padding:var(--space-3) 0; border-top:1px solid var(--color-border)}
-.slot:first-of-type{border-top:0; padding-top:0}
-.slot-head{display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); margin-bottom:6px}
-.slot-label{
-  display:inline-flex; align-items:center; gap:7px; cursor:pointer;
-  font-size:.8125rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
-  color:var(--color-muted-fg);
-}
-
-select{
-  width:100%; min-height:44px; padding:9px 38px 9px 12px; cursor:pointer;
-  font-family:inherit; font-size:.9375rem; color:var(--color-foreground);
-  background-color:var(--color-surface-2);
-  background-image:var(--chevron);
-  background-repeat:no-repeat; background-position:right 12px center; background-size:16px;
-  border:1px solid var(--color-border); border-radius:var(--radius-sm);
-  appearance:none; -webkit-appearance:none;
-  transition:border-color var(--t);
-}
-select:hover{border-color:var(--color-border-strong)}
-.slot.is-done select{color:var(--color-muted-fg); text-decoration:line-through}
-.print-value{display:none}
-
-/* Checkbox: native input, 44x44 hit area, 3:1 border, SVG tick (no emoji). */
-.check{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:44px; height:44px; margin:-10px -10px -10px 0; cursor:pointer; flex:none;
-}
-.check input{position:absolute; opacity:0; width:24px; height:24px; margin:0; cursor:pointer}
-.box{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:24px; height:24px; border-radius:7px;
-  border:2px solid var(--color-border-strong); background:var(--color-surface);
-  transition:background var(--t), border-color var(--t);
-}
-.box svg{width:15px; height:15px; stroke:var(--color-on-accent); stroke-width:3.2; opacity:0; transition:opacity var(--t)}
-.check input:checked + .box{background:var(--color-accent); border-color:var(--color-accent)}
-.check input:checked + .box svg{opacity:1}
-.check input:focus-visible + .box{outline:2px solid var(--color-ring); outline-offset:2px}
-.check:hover .box{border-color:var(--color-accent)}
-
-/* ---------- Add food ---------- */
-.panel{
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:var(--space-5);
-}
-.panel > p{margin:0 0 var(--space-5); color:var(--color-muted-fg); max-width:68ch}
-.managers{display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:var(--space-5)}
-.manager h3{display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-size:1.125rem; margin:0}
-.count{
-  font-family:var(--font-body); font-size:.8125rem; font-weight:600; margin-left:auto;
-  color:var(--color-muted-fg); background:var(--color-muted); padding:3px 9px; border-radius:999px;
-}
-.add-row{display:flex; gap:var(--space-2); margin:var(--space-3) 0}
-.add-row input[type=text]{
-  flex:1; min-width:0; min-height:44px; padding:9px 12px;
-  font-family:inherit; font-size:.9375rem; color:var(--color-foreground);
-  background:var(--color-surface-2); border:1px solid var(--color-border);
-  border-radius:var(--radius-sm); transition:border-color var(--t);
-}
-.add-row input[type=text]::placeholder{color:var(--color-muted-fg)}
-.add-row input[type=text]:hover{border-color:var(--color-border-strong)}
-.added{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:var(--space-2)}
-.added li{
-  display:flex; align-items:center; gap:var(--space-2);
-  background:var(--color-surface-2); border:1px solid var(--color-border);
-  border-radius:var(--radius-sm); padding:8px 8px 8px 12px; font-size:.9375rem;
-}
-.added li span{flex:1; min-width:0; overflow-wrap:anywhere}
-.remove{
-  display:inline-flex; align-items:center; justify-content:center; flex:none;
-  width:44px; height:44px; cursor:pointer;
-  background:transparent; border:1px solid transparent; border-radius:var(--radius-sm);
-  color:var(--color-muted-fg); transition:background var(--t), color var(--t);
-}
-.remove:hover{background:var(--color-muted); color:var(--color-destructive)}
-.remove svg{width:17px; height:17px}
-.empty{margin:0; font-size:.875rem; color:var(--color-muted-fg); font-style:italic}
-
-/* ---------- Reference ---------- */
-.reference{margin-top:var(--space-7)}
-.reference h2{font-family:var(--font-display); font-size:1.5rem; font-weight:600; margin:0 0 var(--space-4)}
-details{
-  background:var(--color-surface); border:1px solid var(--color-border);
-  border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:var(--space-3);
-  overflow:hidden;
-}
-summary{
-  display:flex; align-items:center; gap:10px; cursor:pointer; list-style:none;
-  padding:var(--space-4); font-weight:600; min-height:44px;
-}
-summary::-webkit-details-marker{display:none}
-summary .chev{width:18px; height:18px; flex:none; color:var(--color-muted-fg); transition:transform var(--t)}
-details[open] summary .chev{transform:rotate(90deg)}
-summary:hover{background:var(--color-surface-2)}
-.details-body{padding:0 var(--space-4) var(--space-4)}
-.details-body h4{font-family:var(--font-display); font-size:1rem; margin:var(--space-4) 0 var(--space-2)}
-.details-body h4:first-child{margin-top:0}
-.details-body ul{margin:0 0 var(--space-3); padding-left:1.25rem}
-.details-body li{margin-bottom:6px}
-.details-body p{margin:0 0 var(--space-3); max-width:72ch}
-.cols{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0 var(--space-5)}
-
-.note{
-  display:flex; gap:var(--space-3); align-items:flex-start;
-  margin-top:var(--space-5); padding:var(--space-4);
-  background:var(--color-muted); border-radius:var(--radius);
-  font-size:.9375rem; color:var(--color-muted-fg);
-}
-.note svg{width:20px; height:20px; flex:none; margin-top:2px}
-.note p{margin:0}
-.disclaimer{
-  margin-top:var(--space-6); padding-top:var(--space-4);
-  border-top:1px solid var(--color-border);
-  font-size:.875rem; color:var(--color-muted-fg);
-}
-
-[hidden]{display:none !important}
-
-/* ---------- Print (spec §8) ---------- */
-@media print{
-  :root{
-    --color-background:#fff; --color-surface:#fff; --color-surface-2:#fff;
-    --color-foreground:#000; --color-muted-fg:#3a3a3a; --color-muted:#fff;
-    --color-border:#bbb; --color-border-strong:#999;
-    --shadow-sm:none; --shadow:none; --shadow-lg:none;
-  }
-  @page{margin:14mm}
-  body{padding:0; font-size:11pt; background:#fff}
-  .toolbar, .progress, .check, .note, .no-print{display:none !important}
-  .site-head{padding:0 0 10pt}
-  .chips{margin-bottom:8pt}
-  .grid{grid-template-columns:1fr 1fr; gap:8pt}
-  .day{
-    break-inside:avoid; page-break-inside:avoid;
-    border:1px solid #bbb; box-shadow:none; padding:8pt;
-    transform:none !important; animation:none !important;
-  }
-  select{display:none}
-  .print-value{display:block; font-size:10.5pt; padding:1pt 0}
-  .slot{padding:5pt 0}
-  details{border:0; box-shadow:none; margin-bottom:6pt; break-inside:avoid}
-  summary{padding:4pt 0; font-size:12pt}
-  summary .chev{display:none}
-  .details-body{padding:0}
-  .reference{margin-top:14pt}
-  a{text-decoration:none; color:#000}
 }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<header class="site-head">
-  <h1>2-Week Meal Planner</h1>
-  <p class="tagline">A general low-carb, high-protein plan with Filipino-friendly dishes. Carbohydrate sits at breakfast so lunch and dinner stay light — no rice, just cauliflower rice, extra vegetables, or a bigger portion of protein.</p>
-  <ul class="chips">
-    <li class="chip"><b>2,000–2,200</b> <span>kcal / day</span></li>
-    <li class="chip"><b>180–190 g</b> <span>protein</span></li>
-    <li class="chip"><b>75–100 g</b> <span>net carbs</span></li>
-    <li class="chip"><b>120–140 g</b> <span>fat</span></li>
-    <li class="chip"><b>3–4 L</b> <span>water</span></li>
-  </ul>
-  <ul class="legend">
-    <li><span class="dot dot-breakfast"></span> Breakfast</li>
-    <li><span class="dot dot-lunch"></span> Lunch</li>
-    <li><span class="dot dot-dinner"></span> Dinner</li>
-    <li><span class="dot dot-snack"></span> Snack</li>
-  </ul>
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0E7490"/><circle cx="16" cy="18" r="8.5" fill="none" stroke="#ECFEFF" stroke-width="2"/><path d="M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z" fill="#34D399"/><path d="M16 6.5v4.5" stroke="#34D399" stroke-width="2.2" stroke-linecap="round"/></svg>
+      2-Week Meal Planner
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#inside">What's inside</a>
+      <a href="#who">Who it's for</a>
+      <a class="nav-cta" href="planner.html">Try it for free</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header id="top" class="hero">
+  <div class="wrap hero-grid">
+    <div class="rise">
+      <span class="eyebrow"><span class="pip"></span> Free · No sign-up</span>
+      <h1>Two weeks of meals, <em>decided in ten minutes.</em></h1>
+      <p class="lede">Stop wondering what's for dinner at 7pm. Pick a dish for every slot across fourteen days, tick them off as you eat, and keep the whole plan on your phone or the fridge door. Low-carb, high-protein, and built around everyday food — whether you cook it, buy it, or order it.</p>
+      <div class="hero-actions">
+        <a class="cta cta-primary" href="planner.html">
+          Try it for free
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="cta cta-secondary" href="#how">See how it works</a>
+      </div>
+      <ul class="proof">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg> No account, no email</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg> Works offline</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg> Prints to PDF</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual rise">
+      <div class="hero-frame">
+        <!-- To use a photo instead of the illustration, save a licensed image
+             at assets/hero-food.jpg and uncomment the line below. Left out
+             while the file is absent so visitors don't take a 404 on load.
+        <img src="assets/hero-food.jpg" alt="Describe the dish shown." style="position:absolute;inset:0">
+        -->
+        <svg id="hero-art" class="hero-art" viewBox="0 0 400 500" role="img" aria-label="Illustration of a plated meal: grilled fish with greens, a side of vegetables, and a glass of water.">
+          <defs>
+            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="var(--surface)"/>
+              <stop offset="1" stop-color="var(--muted)"/>
+            </linearGradient>
+            <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="var(--surface)"/>
+              <stop offset="1" stop-color="var(--surface-2)"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="500" fill="url(#bg)"/>
+
+          <!-- table shadow -->
+          <ellipse cx="200" cy="290" rx="150" ry="146" fill="var(--muted)" opacity=".55"/>
+          <!-- plate -->
+          <circle cx="200" cy="284" r="140" fill="url(#plate)" stroke="var(--border)" stroke-width="2"/>
+          <circle cx="200" cy="284" r="118" fill="none" stroke="var(--border)" stroke-width="1.5" opacity=".8"/>
+
+          <!-- grilled fish -->
+          <path d="M112 296c22-34 66-52 104-52s52 14 52 14-14 12-14 26 14 26 14 26-14 14-52 14-82-18-104-28z" fill="var(--breakfast)" opacity=".92"/>
+          <path d="M268 258s16-14 30-16c-4 14-4 26 0 40-14-2-30-16-30-16z" fill="var(--breakfast)" opacity=".7"/>
+          <g stroke="var(--surface)" stroke-width="3" stroke-linecap="round" opacity=".55">
+            <path d="M140 280h96M140 300h96M152 262h72M152 318h72"/>
+          </g>
+
+          <!-- greens -->
+          <g fill="var(--snack)">
+            <ellipse cx="150" cy="212" rx="42" ry="22" transform="rotate(-18 150 212)" opacity=".9"/>
+            <ellipse cx="196" cy="196" rx="34" ry="18" transform="rotate(8 196 196)" opacity=".75"/>
+            <ellipse cx="240" cy="214" rx="30" ry="16" transform="rotate(22 240 214)" opacity=".85"/>
+          </g>
+          <g stroke="var(--surface)" stroke-width="2" opacity=".5" fill="none">
+            <path d="M118 220q32-14 64-6M170 198q30-10 56 0M218 220q22-10 44-4"/>
+          </g>
+
+          <!-- tomato + lemon -->
+          <circle cx="262" cy="330" r="26" fill="var(--dinner)" opacity=".55"/>
+          <circle cx="262" cy="330" r="17" fill="var(--dinner)" opacity=".4"/>
+          <circle cx="148" cy="342" r="22" fill="var(--breakfast)" opacity=".5"/>
+          <g stroke="var(--surface)" stroke-width="2" opacity=".7">
+            <path d="M148 320v44M126 342h44M133 327l30 30M163 327l-30 30"/>
+          </g>
+
+          <!-- cutlery -->
+          <g stroke="var(--border-strong)" stroke-width="5" stroke-linecap="round" opacity=".85">
+            <path d="M46 214v156"/><path d="M354 232v138"/>
+          </g>
+          <g stroke="var(--border-strong)" stroke-width="4" stroke-linecap="round" opacity=".85">
+            <path d="M38 214v40M46 210v44M54 214v40"/>
+          </g>
+          <path d="M348 232q12-16 12 26t-12 22z" fill="var(--border-strong)" opacity=".85"/>
+
+          <!-- glass of water -->
+          <path d="M300 66h56l-8 84h-40z" fill="var(--lunch)" opacity=".22"/>
+          <path d="M303 96h50l-5 54h-40z" fill="var(--lunch)" opacity=".38"/>
+          <path d="M300 66h56l-8 84h-40z" fill="none" stroke="var(--border-strong)" stroke-width="2" stroke-linejoin="round"/>
+
+          <!-- herbs -->
+          <g fill="var(--snack)" opacity=".85">
+            <circle cx="86" cy="122" r="7"/><circle cx="104" cy="106" r="5"/><circle cx="70" cy="104" r="5"/>
+            <circle cx="120" cy="128" r="4"/>
+          </g>
+        </svg>
+        <div class="hero-caption">
+          <span class="swatch">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7a4 4 0 0 0 8 0V2M7 9v13M17 2c-2 3-3 6-3 9a3 3 0 0 0 6 0c0-3-1-6-3-9zM17 14v8"/></svg>
+          </span>
+          <span>
+            <b>Day 3 · Dinner</b>
+            <span>Grilled tilapia, ensaladang mangga, no rice</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
 </header>
 
-<div class="toolbar no-print" role="toolbar" aria-label="Planner controls">
-  <div class="group" role="tablist" aria-label="View">
-    <button class="btn btn-quiet" role="tab" id="tab-plan" aria-selected="true" aria-controls="view-plan" data-tab="plan">Plan</button>
-    <button class="btn btn-quiet" role="tab" id="tab-add" aria-selected="false" aria-controls="view-add" data-tab="add">Add food</button>
-  </div>
-  <div class="group" id="week-filter" role="group" aria-label="Filter days">
-    <button class="btn btn-quiet" aria-pressed="true" data-week="all">All 14 days</button>
-    <button class="btn btn-quiet" aria-pressed="false" data-week="1">Week 1</button>
-    <button class="btn btn-quiet" aria-pressed="false" data-week="2">Week 2</button>
-  </div>
-  <span class="spacer"></span>
-  <button class="btn" id="btn-suggested" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
-    Suggested plan
-  </button>
-  <button class="btn" id="btn-clear" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    Clear checks
-  </button>
-  <button class="btn btn-primary" id="btn-print" type="button">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-    Print / Save PDF
-  </button>
-</div>
-
-<section id="view-plan" role="tabpanel" aria-labelledby="tab-plan">
-  <div class="progress no-print">
-    <p><b id="done-count">0</b> <span>of 42 main meals done</span></p>
-    <div class="track" role="progressbar" aria-labelledby="done-count" aria-valuemin="0" aria-valuemax="42" aria-valuenow="0">
-      <div class="fill" id="progress-fill"></div>
+<section id="how" class="band">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Three steps, then you're done thinking about it</h2>
+      <p>The plan is already filled in when you open it. Change what you don't like, keep what you do.</p>
     </div>
-  </div>
-  <div class="grid" id="grid"></div>
-</section>
-
-<section id="view-add" role="tabpanel" aria-labelledby="tab-add" hidden>
-  <div class="panel">
-    <p>Found a dish you like? Add it here and it becomes a choice in every day's dropdown for that meal. Additions last for this session — print or save a PDF to keep a plan, or add favourites to the <code>BASE_MEALS</code> list in this file to keep them for good.</p>
-    <div class="managers" id="managers"></div>
-  </div>
-</section>
-
-<section class="reference">
-  <h2>Reference</h2>
-
-  <details>
-    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Ground rules</summary>
-    <div class="details-body">
-      <ul>
-        <li><b>No rice at lunch and dinner.</b> Swap in cauliflower rice, double the vegetables, or take a larger portion of protein.</li>
-        <li><b>Protein at every meal</b> — roughly a palm-and-a-half sized portion, 40–50 g per main meal.</li>
-        <li><b>Carbs live at breakfast</b> — oats, fruit, and smoothies early in the day, not late.</li>
-        <li><b>Vegetables fill half the plate</b> at lunch and dinner. Leafy greens, sitaw, sayote, kalabasa, pechay, kangkong, cabbage.</li>
-        <li><b>Cook with real fat</b> — olive or coconut oil, whole eggs, avocado, nuts. Skip margarine and fried street food.</li>
-        <li><b>Water first.</b> 3–4 litres a day. No soft drinks, no sweetened juice, no powdered iced tea.</li>
-        <li><b>Sauces are the hidden carb.</b> Banana ketchup, sweet chilli, hoisin, and gravy add up fast — use vinegar, calamansi, soy, garlic, and chilli instead.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Fruit allowance</summary>
-    <div class="details-body">
-      <p>Two servings a day, taken at breakfast or as a morning snack — not at night.</p>
-      <div class="cols">
-        <div>
-          <h4>Best choices</h4>
-          <ul>
-            <li>Berries — strawberry, blueberry</li>
-            <li>Papaya (1 thick slice)</li>
-            <li>Apple (1 medium)</li>
-            <li>Guava (2 small)</li>
-            <li>Pomelo (3–4 segments)</li>
-            <li>Watermelon (1 cup)</li>
-          </ul>
-        </div>
-        <div>
-          <h4>In moderation</h4>
-          <ul>
-            <li>Banana — lakatan or saba (1 small)</li>
-            <li>Mango (half a medium)</li>
-            <li>Pineapple (1 slice)</li>
-            <li>Orange (1 medium)</li>
-          </ul>
-          <h4>Skip</h4>
-          <ul>
-            <li>Dried fruit, fruit juice, canned fruit in syrup</li>
-            <li>Lanzones, chico, and durian in quantity</li>
-          </ul>
-        </div>
+    <div class="steps">
+      <div class="step">
+        <h3>Open it</h3>
+        <p>Fourteen days appear, every slot pre-filled with a suggested dish. No blank page, no setup, no account to create.</p>
+      </div>
+      <div class="step">
+        <h3>Swap what you want</h3>
+        <p>Every meal is a dropdown. Don't fancy Tuesday's fish? Pick something else. Want adobo three times this week? Nobody's stopping you.</p>
+      </div>
+      <div class="step">
+        <h3>Eat and tick off</h3>
+        <p>Check meals off as you go, however the food got to the table. The day lights up when it's done, and a counter tracks all 42 main meals across the fortnight.</p>
       </div>
     </div>
-  </details>
-
-  <details>
-    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Snack ideas</summary>
-    <div class="details-body">
-      <p>One snack a day is optional — take it only if you are genuinely hungry between meals. Every option here leads with protein or fat, not starch.</p>
-      <ul>
-        <li>Two hard-boiled eggs with a pinch of salt</li>
-        <li>A small handful of almonds, peanuts, or cashews (about 30 g)</li>
-        <li>Greek yogurt with a few berries</li>
-        <li>String cheese with apple slices</li>
-        <li>Protein shake mixed with water</li>
-        <li>Cucumber and carrot sticks with hummus</li>
-        <li>A small banana with a tablespoon of peanut butter</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Weekly shopping list</summary>
-    <div class="details-body">
-      <div class="cols">
-        <div>
-          <h4>Protein</h4>
-          <ul>
-            <li>Chicken breast and thigh — 3 kg</li>
-            <li>Lean pork kasim / chops — 1.5 kg</li>
-            <li>Lean beef (nilaga or tapa cut) — 1 kg</li>
-            <li>Bangus, tilapia, lapu-lapu — 2 kg</li>
-            <li>Shrimp or squid — 500 g</li>
-            <li>Eggs — 3 dozen</li>
-            <li>Canned tuna in water — 4 tins</li>
-            <li>Whey protein — 1 tub</li>
-          </ul>
-          <h4>Fruit</h4>
-          <ul>
-            <li>Papaya, apples, guava</li>
-            <li>Bananas (lakatan or saba)</li>
-            <li>Berries, fresh or frozen</li>
-            <li>Calamansi — 1/2 kg</li>
-          </ul>
-        </div>
-        <div>
-          <h4>Vegetables</h4>
-          <ul>
-            <li>Cauliflower — 3 heads (for cauliflower rice)</li>
-            <li>Kangkong, pechay, malunggay</li>
-            <li>Sitaw, okra, talong</li>
-            <li>Sayote, kalabasa, upo</li>
-            <li>Cabbage, broccoli, carrots</li>
-            <li>Tomato, onion, garlic, ginger</li>
-            <li>Bell pepper, chilli</li>
-          </ul>
-          <h4>Pantry &amp; dairy</h4>
-          <ul>
-            <li>Rolled oats — 1 kg</li>
-            <li>Greek yogurt, cottage cheese</li>
-            <li>Fresh milk — 2 L</li>
-            <li>Olive oil, coconut oil</li>
-            <li>Peanut butter (no added sugar)</li>
-            <li>Almonds, chia, flaxseed</li>
-            <li>Vinegar, soy sauce, patis, black pepper</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </details>
-
-  <details>
-    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg> Practical notes</summary>
-    <div class="details-body">
-      <h4>Prep</h4>
-      <p>Cook proteins in bulk over the weekend — a tray of chicken, a pot of adobo, two dozen boiled eggs. Rice cauliflower in a food processor and freeze it in portions. Wash and cut vegetables the night before so a weekday meal is ten minutes, not forty.</p>
-      <h4>Eating out</h4>
-      <p>Order grilled or sinigang over fried and sweet. Ask for the rice to be left off — most carinderias and restaurants will swap in extra vegetables. Inasal without the rice and with extra atchara is a reliable default.</p>
-      <h4>Alcohol</h4>
-      <p>Beer is liquid carbohydrate. If you drink, keep it to two servings a week and choose spirits with soda water and calamansi over beer or sweet mixers.</p>
-      <h4>Tracking progress</h4>
-      <p>Weigh in once a week, same day, same time, after waking and before eating. The scale moves unevenly — the trend over three weeks is the signal, not any single morning.</p>
-    </div>
-  </details>
-
-  <div class="note no-print">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-    <p><b>Keep a copy.</b> This planner does not save to your device — your picks, check-marks, and added dishes reset when the page reloads. Use <b>Print / Save PDF</b> to keep the plan you built.</p>
   </div>
-
-  <p class="disclaimer">This app supports meal planning and is not medical advice. Anyone on regular medication or with recently flagged bloodwork should consult their doctor before a significant dietary change.</p>
 </section>
 
-</div>
+<section id="inside">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What you get</h2>
+      <p>Everything is in one page that loads instantly and keeps working when the signal drops.</p>
+    </div>
+    <div class="cols-3">
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>
+        <h3>Fourteen days, four slots</h3>
+        <p>Breakfast, lunch, dinner, and an optional snack for every single day — with a suggested plan already chosen for you.</p>
+      </div>
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+        <h3>Add your own dishes</h3>
+        <p>Found something you love? Type it in and it becomes a choice on every day of the plan, right alongside the built-in options.</p>
+      </div>
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></span>
+        <h3>Print it or save a PDF</h3>
+        <p>One button turns the whole fortnight into a clean two-column printout for the fridge door, reference sections and all.</p>
+      </div>
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h12"/></svg></span>
+        <h3>A shopping list that matches</h3>
+        <p>Protein, vegetables, fruit, and pantry staples for the week, sized for the plan — so one trip covers it, if you're the one shopping.</p>
+      </div>
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zM9 21h6"/></svg></span>
+        <h3>The rules, in plain language</h3>
+        <p>Why carbs sit at breakfast, what fruit fits, how to order when you're eating out, and what to do about beer.</p>
+      </div>
+      <div class="feature">
+        <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
+        <h3>Made for your phone</h3>
+        <p>Big tap targets and one clean column on a small screen — for the kitchen, the market, or the queue at a food stall.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>The numbers behind the plan</h2>
+      <p>Roughly 2,000–2,200 kcal a day with protein at every meal. Carbohydrate sits at breakfast so lunch and dinner stay light — no rice at those meals, just cauliflower rice, extra vegetables, or a bigger portion of protein.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>14</b><span>days planned</span></div>
+      <div class="stat"><b>50</b><span>dishes built in</span></div>
+      <div class="stat"><b>42</b><span>meals to tick off</span></div>
+      <div class="stat"><b>180g</b><span>protein a day</span></div>
+      <div class="stat"><b>₱0</b><span>to use it</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="who">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Built for however you eat</h2>
+      <p>You don't have to cook. The planner decides <em>what</em> the meal is — whether you make it, buy it, order it, or someone at home makes it for you. Adjust portions to your own appetite. Nothing here is pitched at one gender, and nothing assumes a gym membership.</p>
+    </div>
+    <div class="two">
+      <div class="who">
+        <h3>If you cook most of your meals</h3>
+        <ul>
+          <li>Decide once a fortnight instead of every evening</li>
+          <li>Cook in bulk on the weekend and eat well all week</li>
+          <li>One shopping list covers the whole week</li>
+          <li>Everyone at home can see what's for dinner without asking</li>
+        </ul>
+      </div>
+      <div class="who">
+        <h3>If you buy, order, or eat out</h3>
+        <ul>
+          <li>Walk in already knowing what to order — grilled over fried, no rice</li>
+          <li>Every dish is plain enough to ask for at a carinderia or restaurant</li>
+          <li>Add the meals you actually buy so the plan matches your week</li>
+          <li>Same tick-off and PDF, whoever did the cooking</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="close-cta">
+      <h2>Ready to stop deciding at 7pm?</h2>
+      <p>Open the planner, keep the suggested picks or change them all, and print the fortnight before you next shop. It's free, and there's nothing to sign up for.</p>
+      <a class="cta cta-primary" href="planner.html">
+        Try it for free
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="cta-note">Opens straight into the planner — no account, no email, no payment.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-in">
+      <a class="brand" href="#top">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#0E7490"/><circle cx="16" cy="18" r="8.5" fill="none" stroke="#ECFEFF" stroke-width="2"/><path d="M16 14.5c3.6 0 6 2.4 6 4.6H10c0-2.2 2.4-4.6 6-4.6z" fill="#34D399"/><path d="M16 6.5v4.5" stroke="#34D399" stroke-width="2.2" stroke-linecap="round"/></svg>
+        2-Week Meal Planner
+      </a>
+      <a href="planner.html">Open the planner</a>
+      <a href="https://github.com/gilbertconsebido-tacreg8/2weekmealplan">Source on GitHub</a>
+    </div>
+    <p class="disclaimer">This app supports meal planning and is not medical advice. Anyone on regular medication or with recently flagged bloodwork should consult their doctor before a significant dietary change.</p>
+  </div>
+</footer>
 
 <script>
-"use strict";
+/* Marks the nav link for whichever section is currently in view. Uses scroll
+   position rather than IntersectionObserver, and only ever adds an attribute —
+   nothing on the page is hidden or revealed by this, so a backgrounded tab or
+   a JS failure costs nothing but the underline. */
+(function(){
+  "use strict";
+  var links = [].slice.call(document.querySelectorAll('.nav-links a[href^="#"]'));
+  var targets = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  if (!links.length) return;
 
-/* ---------- Meal library (spec §6) ---------- */
-const BASE_MEALS = {
-  breakfast: [
-    "Three-egg omelette with tomato, onion & spinach + slice of papaya",
-    "Rolled oats with milk, banana & a spoon of peanut butter",
-    "Tortang talong with 2 eggs + sliced mango",
-    "Greek yogurt with berries, chia & almonds",
-    "Scrambled eggs with tinapa flakes + small steamed kamote",
-    "Protein smoothie — milk, banana, peanut butter, whey",
-    "Three boiled eggs with avocado & tomato salad",
-    "Oats with cinnamon, apple & a scoop of whey",
-    "Lean longganisa (2 pcs) with 2 eggs & atchara",
-    "Cottage cheese with pineapple & flaxseed",
-    "Egg & malunggay omelette + 1 orange",
-    "Overnight oats with milk, cacao & peanut butter",
-    "Daing na bangus (small) with 2 eggs & sliced tomato",
-    "Banana-oat protein pancakes with Greek yogurt"
-  ],
-  lunch: [
-    "Chicken adobo (skinless thigh) with cauliflower rice & sitaw",
-    "Grilled bangus belly with ensaladang talong",
-    "Lean beef tapa with garlic cauliflower rice & atchara",
-    "Chicken tinola heavy on malunggay & sayote",
-    "Pork sinigang (lean kasim) with kangkong, labanos & gabi",
-    "Grilled chicken breast with pinakbet",
-    "Ginataang tilapia with kalabasa & string beans",
-    "Lean beef nilaga with cabbage, pechay & sayote",
-    "Chicken curry (light coconut) with cauliflower rice",
-    "Pork bistek with sautéed cabbage & onions",
-    "Tuna kinilaw with tomato, onion & cucumber salad",
-    "Chopsuey with chicken breast & quail eggs",
-    "Grilled pork chop with ensaladang talong & tomato",
-    "Sinigang na hipon with kangkong & okra"
-  ],
-  dinner: [
-    "Grilled tilapia with ensaladang mangga & tomato",
-    "Chicken inasal (skinless) with grilled eggplant",
-    "Lean beef kaldereta (no potato) with sautéed green beans",
-    "Pesang isda with pechay & cabbage",
-    "Ginisang munggo with lean pork & malunggay",
-    "Baked chicken thigh with roasted kalabasa & broccoli",
-    "Sinigang na baboy (lean) with kangkong & labanos",
-    "Grilled squid with ensaladang talong",
-    "Chicken afritada (no potato) with bell pepper & carrots",
-    "Pork adobo sa gata (lean) with sautéed sitaw",
-    "Steamed lapu-lapu with ginger, leeks & sayote",
-    "Bulalo broth with lean beef, cabbage & half a corn cob",
-    "Lean chicken sisig (light mayo) with cucumber salad",
-    "Ginataang alimasag with kalabasa & malunggay"
-  ],
-  snack: [
-    "No snack",
-    "Two hard-boiled eggs",
-    "Small handful of almonds or peanuts (30 g)",
-    "Greek yogurt with a few berries",
-    "String cheese with apple slices",
-    "Protein shake with water",
-    "Cucumber & carrot sticks with hummus",
-    "Small banana with a tablespoon of peanut butter"
-  ]
-};
-
-const CATS = ["breakfast", "lunch", "dinner", "snack"];
-const CORE = ["breakfast", "lunch", "dinner"];
-const LABELS = {breakfast:"Breakfast", lunch:"Lunch", dinner:"Dinner", snack:"Snack"};
-const DAYS = 14;
-
-/* ---------- State (in memory only — spec §9) ---------- */
-const added = {breakfast:[], lunch:[], dinner:[], snack:[]};
-let days = [];
-let weekFilter = "all";
-
-const optionsFor = cat => BASE_MEALS[cat].concat(added[cat]);
-
-/* Suggested plan maps day N to option N, reproducing the written plan. */
-function buildSuggested(){
-  days = Array.from({length: DAYS}, (_, i) => ({
-    picks: {
-      breakfast: BASE_MEALS.breakfast[i % BASE_MEALS.breakfast.length],
-      lunch: BASE_MEALS.lunch[i % BASE_MEALS.lunch.length],
-      dinner: BASE_MEALS.dinner[i % BASE_MEALS.dinner.length],
-      snack: BASE_MEALS.snack[0]
-    },
-    done: {breakfast:false, lunch:false, dinner:false, snack:false}
-  }));
-}
-
-/* Selections are stored as meal TEXT, not an index, so adding or removing
-   dishes never corrupts them. If a stored dish is gone, fall back safely. */
-function reconcile(){
-  days.forEach(day => {
-    CATS.forEach(cat => {
-      const opts = optionsFor(cat);
-      if (!opts.includes(day.picks[cat])) day.picks[cat] = opts[0];
+  function sync(){
+    var line = window.scrollY + window.innerHeight * 0.35;
+    var active = -1;
+    targets.forEach(function(el, i){
+      if (el && el.offsetTop <= line) active = i;
     });
-  });
-}
-
-/* ---------- Elements ---------- */
-const grid = document.getElementById("grid");
-const managers = document.getElementById("managers");
-const doneCount = document.getElementById("done-count");
-const progressFill = document.getElementById("progress-fill");
-const progressBar = progressFill.parentElement;
-
-const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>';
-const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
-
-/* ---------- Render: plan ---------- */
-function renderGrid(){
-  reconcile();
-  grid.textContent = "";
-  const frag = document.createDocumentFragment();
-
-  days.forEach((day, i) => {
-    const week = i < 7 ? 1 : 2;
-    if (weekFilter !== "all" && String(week) !== weekFilter) return;
-
-    const card = document.createElement("article");
-    card.className = "day";
-    card.style.animationDelay = Math.min(i, 8) * 25 + "ms";
-    if (CORE.every(c => day.done[c])) card.classList.add("is-complete");
-
-    const head = document.createElement("header");
-    head.className = "day-head";
-    head.innerHTML = '<h3>Day ' + (i + 1) + '</h3><span class="badge">Week ' + week + '</span>';
-    card.appendChild(head);
-
-    CATS.forEach(cat => {
-      const id = "d" + i + "-" + cat;
-      const slot = document.createElement("div");
-      slot.className = "slot" + (day.done[cat] ? " is-done" : "");
-
-      const slotHead = document.createElement("div");
-      slotHead.className = "slot-head";
-      slotHead.innerHTML =
-        '<label class="slot-label" for="' + id + '"><span class="dot dot-' + cat + '"></span>' + LABELS[cat] + '</label>';
-
-      const check = document.createElement("label");
-      check.className = "check";
-      check.innerHTML =
-        '<input type="checkbox"' + (day.done[cat] ? " checked" : "") + '>' +
-        '<span class="box">' + SVG_CHECK + '</span>' +
-        '<span class="sr-only">Mark day ' + (i + 1) + ' ' + LABELS[cat].toLowerCase() + ' as eaten</span>';
-      slotHead.appendChild(check);
-      slot.appendChild(slotHead);
-
-      const select = document.createElement("select");
-      select.id = id;
-      optionsFor(cat).forEach(meal => {
-        const opt = document.createElement("option");
-        opt.value = meal;
-        opt.textContent = meal;
-        if (meal === day.picks[cat]) opt.selected = true;
-        select.appendChild(opt);
-      });
-      slot.appendChild(select);
-
-      /* Flattened text for print — selects don't print their chosen value. */
-      const printValue = document.createElement("span");
-      printValue.className = "print-value";
-      printValue.textContent = day.picks[cat];
-      slot.appendChild(printValue);
-
-      select.addEventListener("change", e => {
-        day.picks[cat] = e.target.value;
-        printValue.textContent = e.target.value;
-      });
-
-      /* Update in place rather than re-rendering: a full re-render destroys
-         the focused checkbox and drops keyboard users back to <body>. */
-      check.querySelector("input").addEventListener("change", e => {
-        day.done[cat] = e.target.checked;
-        slot.classList.toggle("is-done", e.target.checked);
-        card.classList.toggle("is-complete", CORE.every(c => day.done[c]));
-        renderProgress();
-      });
-
-      card.appendChild(slot);
+    links.forEach(function(a, i){
+      if (i === active) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
     });
+  }
 
-    frag.appendChild(card);
-  });
-
-  grid.appendChild(frag);
-  renderProgress();
-}
-
-function renderProgress(){
-  let n = 0;
-  days.forEach(day => CORE.forEach(c => { if (day.done[c]) n++; }));
-  const total = DAYS * CORE.length;
-  doneCount.textContent = n;
-  progressFill.style.width = (n / total * 100) + "%";
-  progressBar.setAttribute("aria-valuenow", n);
-}
-
-/* ---------- Render: Add food (spec §5) ---------- */
-function renderManagers(){
-  managers.textContent = "";
-  const frag = document.createDocumentFragment();
-
-  CATS.forEach(cat => {
-    const box = document.createElement("div");
-    box.className = "manager";
-
-    const h = document.createElement("h3");
-    h.innerHTML =
-      '<span class="dot dot-' + cat + '"></span>' + LABELS[cat] +
-      '<span class="count">' + optionsFor(cat).length + ' options</span>';
-    box.appendChild(h);
-
-    const form = document.createElement("form");
-    form.className = "add-row";
-    form.innerHTML =
-      '<label class="sr-only" for="add-' + cat + '">Add a ' + LABELS[cat].toLowerCase() + ' dish</label>' +
-      '<input type="text" id="add-' + cat + '" placeholder="e.g. Grilled liempo with atchara" autocomplete="off">' +
-      '<button type="submit" class="btn btn-primary">Add</button>';
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      const input = form.querySelector("input");
-      const value = input.value.trim();
-      input.value = "";
-      /* Empty and duplicate entries are ignored. */
-      if (!value) return;
-      if (optionsFor(cat).some(m => m.toLowerCase() === value.toLowerCase())) return;
-      added[cat].push(value);
-      renderManagers();
-      renderGrid();
-      document.getElementById("add-" + cat).focus();
-    });
-    box.appendChild(form);
-
-    if (added[cat].length === 0) {
-      const empty = document.createElement("p");
-      empty.className = "empty";
-      empty.textContent = "Nothing added yet — the " + BASE_MEALS[cat].length + " built-in options are all available.";
-      box.appendChild(empty);
-    } else {
-      const list = document.createElement("ul");
-      list.className = "added";
-      added[cat].forEach((meal, idx) => {
-        const li = document.createElement("li");
-        li.innerHTML = '<span></span><button class="remove" type="button">' + SVG_TRASH + '</button>';
-        li.querySelector("span").textContent = meal;
-        const btn = li.querySelector(".remove");
-        btn.setAttribute("aria-label", 'Remove "' + meal + '" from ' + LABELS[cat].toLowerCase());
-        btn.addEventListener("click", () => {
-          added[cat].splice(idx, 1);
-          renderManagers();
-          renderGrid();   /* reconcile() puts any orphaned day back on a valid option */
-        });
-        list.appendChild(li);
-      });
-      box.appendChild(list);
-    }
-
-    frag.appendChild(box);
-  });
-
-  managers.appendChild(frag);
-}
-
-/* ---------- Controls ---------- */
-document.querySelectorAll("[data-tab]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.tab;
-    document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b === btn)));
-    document.getElementById("view-plan").hidden = tab !== "plan";
-    document.getElementById("view-add").hidden = tab !== "add";
-  });
-});
-
-document.querySelectorAll("#week-filter [data-week]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    weekFilter = btn.dataset.week;
-    document.querySelectorAll("#week-filter [data-week]").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
-    renderGrid();
-  });
-});
-
-/* Restore the suggested picks but keep whatever the user has ticked off. */
-document.getElementById("btn-suggested").addEventListener("click", () => {
-  const checks = days.map(d => ({...d.done}));
-  buildSuggested();
-  days.forEach((d, i) => { d.done = checks[i]; });
-  renderGrid();
-});
-
-document.getElementById("btn-clear").addEventListener("click", () => {
-  days.forEach(d => CATS.forEach(c => { d.done[c] = false; }));
-  renderGrid();
-});
-
-document.getElementById("btn-print").addEventListener("click", () => {
-  document.getElementById("tab-plan").click();
-  window.print();
-});
-
-/* Expand every reference section for print, however print was triggered. */
-window.addEventListener("beforeprint", () => {
-  document.querySelectorAll("details").forEach(d => { d.open = true; });
-});
-
-/* ---------- Boot ---------- */
-buildSuggested();
-renderGrid();
-renderManagers();
+  /* Throttled on a timestamp, not requestAnimationFrame: rAF never fires in a
+     backgrounded tab, which would leave the underline permanently stale. */
+  var last = 0;
+  window.addEventListener('scroll', function(){
+    var now = Date.now();
+    if (now - last < 80) return;
+    last = now;
+    sync();
+  }, {passive:true});
+  window.addEventListener('resize', sync, {passive:true});
+  sync();
+})();
 </script>
+
 </body>
 </html>

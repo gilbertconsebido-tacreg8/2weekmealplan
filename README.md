@@ -24,9 +24,16 @@ A general low-carb, high-protein approach built around roughly 2,000–2,200 kca
 
 These figures are shown as reference chips in the header. The app does not calculate or enforce them.
 
+## The two pages
+
+| File | What it is |
+|------|------------|
+| `index.html` | Landing page — what the planner does, and a link into it |
+| `planner.html` | The planner itself, where you pick and tick off meals |
+
 ## Running it
 
-Open `index.html` in any browser. That's the whole thing — no install, no build step, no server.
+Open either file in any browser. That's the whole thing — no install, no build step, no server.
 
 It also works offline and straight from disk, because there are no network requests at all: no frameworks, no CDN, no web fonts, no analytics. The favicon is an inline SVG data URI.
 
