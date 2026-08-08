@@ -115,8 +115,8 @@ img,svg{max-width:100%}
 .hero-grid{display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(32px,5vw,64px); align-items:center}
 @media (max-width:940px){ .hero-grid{grid-template-columns:1fr; gap:40px} }
 
-/* Hero visual. Swap .hero-art for <img src="assets/hero.jpg" alt="..."> when
-   a licensed photo is available — the frame and radius carry over unchanged. */
+/* Hero visual. Square frame matches the 1:1 source, so width/height on the
+   img reserve the exact space and nothing shifts as it decodes. */
 .hero-visual{position:relative}
 .hero-frame{
   position:relative; overflow:hidden;
@@ -125,20 +125,6 @@ img,svg{max-width:100%}
   aspect-ratio:1/1;
 }
 .hero-frame img{width:100%; height:100%; object-fit:cover; display:block}
-.hero-art{width:100%; height:100%; display:block}
-/* Opaque, not translucent: over a photo the glass version dropped the
-   sub-line to 3.34:1. */
-.hero-caption{
-  position:absolute; left:18px; right:18px; bottom:18px;
-  display:flex; align-items:center; gap:12px;
-  padding:14px 18px; border-radius:var(--r);
-  background:var(--surface);
-  border:1px solid var(--border); box-shadow:var(--sh);
-}
-.hero-caption b{font-family:var(--display); font-size:1rem; display:block}
-.hero-caption span{font-size:.8125rem; color:var(--muted-fg)}
-.hero-caption .swatch{width:38px;height:38px;border-radius:11px;flex:none;background:var(--muted);display:inline-flex;align-items:center;justify-content:center;color:var(--primary)}
-.hero-caption .swatch svg{width:20px;height:20px}
 .eyebrow{
   display:inline-flex; align-items:center; gap:9px; margin-bottom:20px;
   padding:7px 16px; border-radius:999px;
@@ -274,84 +260,13 @@ footer a{color:var(--muted-fg)}
 
     <div class="hero-visual rise">
       <div class="hero-frame">
-        <!-- To use a photo instead of the illustration, save a licensed image
-             at assets/hero-food.jpg and uncomment the line below. Left out
-             while the file is absent so visitors don't take a 404 on load.
-        <img src="assets/hero-food.jpg" alt="Describe the dish shown." style="position:absolute;inset:0">
-        -->
-        <svg id="hero-art" class="hero-art" viewBox="0 0 400 500" role="img" aria-label="Illustration of a plated meal: grilled fish with greens, a side of vegetables, and a glass of water.">
-          <defs>
-            <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="var(--surface)"/>
-              <stop offset="1" stop-color="var(--muted)"/>
-            </linearGradient>
-            <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="var(--surface)"/>
-              <stop offset="1" stop-color="var(--surface-2)"/>
-            </linearGradient>
-          </defs>
-          <rect width="400" height="500" fill="url(#bg)"/>
-
-          <!-- table shadow -->
-          <ellipse cx="200" cy="290" rx="150" ry="146" fill="var(--muted)" opacity=".55"/>
-          <!-- plate -->
-          <circle cx="200" cy="284" r="140" fill="url(#plate)" stroke="var(--border)" stroke-width="2"/>
-          <circle cx="200" cy="284" r="118" fill="none" stroke="var(--border)" stroke-width="1.5" opacity=".8"/>
-
-          <!-- grilled fish -->
-          <path d="M112 296c22-34 66-52 104-52s52 14 52 14-14 12-14 26 14 26 14 26-14 14-52 14-82-18-104-28z" fill="var(--breakfast)" opacity=".92"/>
-          <path d="M268 258s16-14 30-16c-4 14-4 26 0 40-14-2-30-16-30-16z" fill="var(--breakfast)" opacity=".7"/>
-          <g stroke="var(--surface)" stroke-width="3" stroke-linecap="round" opacity=".55">
-            <path d="M140 280h96M140 300h96M152 262h72M152 318h72"/>
-          </g>
-
-          <!-- greens -->
-          <g fill="var(--snack)">
-            <ellipse cx="150" cy="212" rx="42" ry="22" transform="rotate(-18 150 212)" opacity=".9"/>
-            <ellipse cx="196" cy="196" rx="34" ry="18" transform="rotate(8 196 196)" opacity=".75"/>
-            <ellipse cx="240" cy="214" rx="30" ry="16" transform="rotate(22 240 214)" opacity=".85"/>
-          </g>
-          <g stroke="var(--surface)" stroke-width="2" opacity=".5" fill="none">
-            <path d="M118 220q32-14 64-6M170 198q30-10 56 0M218 220q22-10 44-4"/>
-          </g>
-
-          <!-- tomato + lemon -->
-          <circle cx="262" cy="330" r="26" fill="var(--dinner)" opacity=".55"/>
-          <circle cx="262" cy="330" r="17" fill="var(--dinner)" opacity=".4"/>
-          <circle cx="148" cy="342" r="22" fill="var(--breakfast)" opacity=".5"/>
-          <g stroke="var(--surface)" stroke-width="2" opacity=".7">
-            <path d="M148 320v44M126 342h44M133 327l30 30M163 327l-30 30"/>
-          </g>
-
-          <!-- cutlery -->
-          <g stroke="var(--border-strong)" stroke-width="5" stroke-linecap="round" opacity=".85">
-            <path d="M46 214v156"/><path d="M354 232v138"/>
-          </g>
-          <g stroke="var(--border-strong)" stroke-width="4" stroke-linecap="round" opacity=".85">
-            <path d="M38 214v40M46 210v44M54 214v40"/>
-          </g>
-          <path d="M348 232q12-16 12 26t-12 22z" fill="var(--border-strong)" opacity=".85"/>
-
-          <!-- glass of water -->
-          <path d="M300 66h56l-8 84h-40z" fill="var(--lunch)" opacity=".22"/>
-          <path d="M303 96h50l-5 54h-40z" fill="var(--lunch)" opacity=".38"/>
-          <path d="M300 66h56l-8 84h-40z" fill="none" stroke="var(--border-strong)" stroke-width="2" stroke-linejoin="round"/>
-
-          <!-- herbs -->
-          <g fill="var(--snack)" opacity=".85">
-            <circle cx="86" cy="122" r="7"/><circle cx="104" cy="106" r="5"/><circle cx="70" cy="104" r="5"/>
-            <circle cx="120" cy="128" r="4"/>
-          </g>
-        </svg>
-        <div class="hero-caption">
-          <span class="swatch">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7a4 4 0 0 0 8 0V2M7 9v13M17 2c-2 3-3 6-3 9a3 3 0 0 0 6 0c0-3-1-6-3-9zM17 14v8"/></svg>
-          </span>
-          <span>
-            <b>Day 3 · Dinner</b>
-            <span>Grilled tilapia, ensaladang mangga, no rice</span>
-          </span>
-        </div>
+        <picture>
+          <source srcset="assets/hero-food.webp" type="image/webp">
+          <img src="assets/hero-food.jpg" width="1200" height="1200"
+               alt="An overhead spread of the plan's food: papaya, mango, berries and orange; malunggay and spinach; rolled oats, Greek yogurt with chia and almonds; eggs, sweet potato, tomato and onion; a grilled fish fillet and a berry smoothie."
+               fetchpriority="high" decoding="async">
+        </picture>
+      </div>
       </div>
     </div>
   </div>
